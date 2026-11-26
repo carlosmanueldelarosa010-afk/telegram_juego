@@ -268,10 +268,10 @@
       <div id="rigs-list"></div>
     </section>
 
-    <!-- PESTAÑA 3: BOOST CRIPTO (PRODUCTIVIDAD) -->
+    <!-- PESTAÑA 3: BOOST CRIPTO (VERIFICACIÓN MANUAL POR CAPTURA) -->
     <section id="tab-crypto" class="tab-content">
       <div class="notice">
-        Debemos confirmar el pago antes de que se acredite el boost. La confirmación puede tardar de 15 a 25 minutos.
+        Envía el pago exacto a la dirección indicada y manda una <strong>captura de pantalla</strong> del comprobante (junto con tu ID o referencia de orden) para verificación manual.
       </div>
 
       <div class="card">
@@ -283,14 +283,14 @@
 
         <label class="user-sub">Paquete de productividad</label>
         <select id="boost-pack">
-          <option value="1.5">Boost x1.5 de productividad — $5.99</option>
-          <option value="2.0">Boost x2.0 de productividad — $10.99</option>
-          <option value="3.0">Boost x3.0 de productividad — $17.99</option>
-          <option value="4.0">Boost x4.0 de productividad — $25.99</option>
-          <option value="6.0">Boost x6.0 de productividad — $45.99</option>
-          <option value="8.0">Boost x8.0 de productividad — $59.99</option>
-          <option value="10.0">Boost x10.0 de productividad — $74.99</option>
-          <option value="15.0">Boost x15.0 de productividad — $99.99</option>
+          <option value="1.5" data-price="5.99">Boost x1.5 de productividad — $5.99</option>
+          <option value="2.0" data-price="10.99">Boost x2.0 de productividad — $10.99</option>
+          <option value="3.0" data-price="17.99">Boost x3.0 de productividad — $17.99</option>
+          <option value="4.0" data-price="25.99">Boost x4.0 de productividad — $25.99</option>
+          <option value="6.0" data-price="45.99">Boost x6.0 de productividad — $45.99</option>
+          <option value="8.0" data-price="59.99">Boost x8.0 de productividad — $59.99</option>
+          <option value="10.0" data-price="74.99">Boost x10.0 de productividad — $74.99</option>
+          <option value="15.0" data-price="99.99">Boost x15.0 de productividad — $99.99</option>
         </select>
 
         <label class="user-sub">Red de pago</label>
@@ -303,15 +303,20 @@
 
         <div id="order-box" class="ref-box" style="display:none; margin-top:12px;">
           <div><strong>Envía EXACTAMENTE:</strong> <span id="pay-amount">-</span> USDT (<span id="pay-network">-</span>)</div>
-          <div class="user-sub" style="margin-top:2px;">El monto incluye decimales únicos para identificar tu pago. No lo redondees.</div>
+          <div class="user-sub" style="margin-top:2px;">Verifica que la red coincida con la dirección antes de enviar.</div>
           <div style="margin-top:8px;"><strong>A esta dirección:</strong></div>
           <div id="deposit-address" style="margin-top:4px;">-</div>
           <div style="margin-top:8px;"><strong>Orden:</strong> <span id="order-ref">-</span></div>
-          <div id="order-status" style="margin-top:8px; color:#fcd34d;">-</div>
+          <div id="order-status" style="margin-top:8px; color:#fcd34d;">
+            📸 Toma captura del comprobante y envíala para revisión manual indicando tu número de orden.
+          </div>
           <div class="row-between" style="margin-top:10px;">
             <button id="btn-copy-amount" class="btn btn-outline">Copiar monto</button>
             <button id="btn-copy-address" class="btn btn-outline">Copiar dirección</button>
           </div>
+          <button id="btn-copy-summary" class="btn btn-warn" style="width:100%; margin-top:8px;">
+            Copiar resumen para enviar captura
+          </button>
         </div>
       </div>
     </section>
@@ -340,11 +345,14 @@
   </nav>
 
   <script>
-    const BOT_USERNAME = "cripto_game_breaking_bot";// Cambia esto por el username de tu bot sin @
-    // URL de tu servidor (backend) que verifica los pagos
-    const API_URL = "https://TU-SERVIDOR.com";
-    const MAX_BOOST_PURCHASES = 2; // Cuántos boosts se pueden acumular
-    const MAX_ACCUM_SECONDS = 6 * 3600; // Tope de acumulación pasiva: 6 horas
+    const BOT_USERNAME = "cripto_game_breaking_bot";
+    const WALLETS = {
+      "USDT-TON": "UQBlZ_oqw1P2k0TPqu309xsbhpeMqEHXd3YyWHaa5nUzQRC7",
+      "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
+    };
+
+    const MAX_BOOST_PURCHASES = 2;
+    const MAX_ACCUM_SECONDS = 6 * 3600;
     const STORAGE_KEY = "tg_mini_game_state_v1";
 
     const RIGS_CATALOG = [
@@ -394,7 +402,6 @@
     let state = loadState();
     if (state.productivityMultiplier > 1 && !state.boostCount) state.boostCount = 1;
 
-    // Aplicar referido inicial si existe y no es el mismo usuario
     if (startParam && startParam !== playerId && !state.referredBy) {
       state.referredBy = startParam;
       state.coins += 50;
@@ -411,7 +418,7 @@
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(() => {
         el.style.display = "none";
-      }, 2400);
+      }, 2500);
     }
 
     function haptic(type = "light") {
@@ -451,7 +458,7 @@
       const now = Date.now();
       const elapsedSec = Math.max(0, (now - state.lastTick) / 1000);
       if (elapsedSec >= 1 && state.energy < state.maxEnergy) {
-        const regen = Math.floor(elapsedSec * 2); // +2 energía por segundo
+        const regen = Math.floor(elapsedSec * 2);
         if (regen > 0) {
           state.energy = Math.min(state.maxEnergy, state.energy + regen);
           state.lastTick = now;
@@ -571,95 +578,61 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Boost Cripto (el servidor verifica el pago y acredita el boost) =====
-    let currentOrderId = null;
-    let orderTimer = null;
+    // ===== Boost Cripto (generación de orden para pago y captura manual) =====
+    let lastOrderSummary = "";
 
-    async function api(path, options = {}) {
-      const res = await fetch(API_URL + path, {
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "tma " + (tg?.initData || "")
-        }
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Error del servidor");
-      return data;
-    }
-
-    function applyServerBoost(data) {
-      state.productivityMultiplier = data.mult;
-      state.boostCount = data.boostCount;
-      saveState();
-      render();
-    }
-
-    async function syncFromServer() {
-      if (!tg?.initData) return;
-      try { applyServerBoost(await api("/api/me")); } catch (e) { console.warn(e.message); }
-    }
-
-    function pollOrder() {
-      clearInterval(orderTimer);
-      orderTimer = setInterval(async () => {
-        try {
-          const o = await api(`/api/orders/${currentOrderId}`);
-          const st = document.getElementById("order-status");
-          if (o.status === "paid") {
-            clearInterval(orderTimer);
-            st.textContent = "✅ Pago confirmado. ¡Boost acreditado!";
-            applyServerBoost(o);
-            showToast("¡Boost acreditado!");
-          } else if (o.status === "paid_not_applied") {
-            clearInterval(orderTimer);
-            st.textContent = "Pago recibido, pero ya tienes el máximo de boosts. Contacta soporte.";
-          } else if (o.status === "expired") {
-            clearInterval(orderTimer);
-            st.textContent = "La orden expiró. Genera una nueva si aún no pagaste.";
-          } else {
-            st.textContent = "⏳ Esperando confirmación del pago (puede tardar de 15 a 25 minutos)...";
-          }
-        } catch (e) { /* reintenta en el siguiente ciclo */ }
-      }, 15000);
-    }
-
-    document.getElementById("btn-create-order").addEventListener("click", async () => {
-      if (!tg?.initData) { showToast("Abre el juego desde Telegram para comprar"); return; }
-      if (state.boostCount >= MAX_BOOST_PURCHASES) { showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`); return; }
-      const btn = document.getElementById("btn-create-order");
-      btn.disabled = true;
-      try {
-        const o = await api("/api/orders", {
-          method: "POST",
-          body: JSON.stringify({
-            pack: document.getElementById("boost-pack").value,
-            network: document.getElementById("crypto-network").value
-          })
-        });
-        currentOrderId = o.orderId;
-        document.getElementById("pay-amount").textContent = o.amount;
-        document.getElementById("pay-network").textContent = o.network;
-        document.getElementById("deposit-address").textContent = o.address;
-        document.getElementById("order-ref").textContent = o.orderId;
-        document.getElementById("order-status").textContent = "⏳ Esperando tu pago. Tienes 60 minutos para enviarlo.";
-        document.getElementById("order-box").style.display = "block";
-        pollOrder();
-      } catch (e) {
-        showToast(e.message);
-      } finally {
-        btn.disabled = false;
+    document.getElementById("btn-create-order").addEventListener("click", () => {
+      if (state.boostCount >= MAX_BOOST_PURCHASES) {
+        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`);
+        return;
       }
+
+      const packSelect = document.getElementById("boost-pack");
+      const selectedOption = packSelect.options[packSelect.selectedIndex];
+      const mult = parseFloat(packSelect.value);
+      const basePrice = parseFloat(selectedOption.getAttribute("data-price"));
+      const network = document.getElementById("crypto-network").value;
+      const address = WALLETS[network] || "";
+
+      // Pequeña variación decimal para facilitar identificar pagos manuales
+      const centsOffset = ((Date.now() % 89) + 11) / 1000;
+      const exactAmount = (basePrice + centsOffset).toFixed(3);
+      const orderRef = `ORD-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+
+      document.getElementById("pay-amount").textContent = exactAmount;
+      document.getElementById("pay-network").textContent = network;
+      document.getElementById("deposit-address").textContent = address;
+      document.getElementById("order-ref").textContent = orderRef;
+      document.getElementById("order-status").textContent =
+        `📸 Envía ${exactAmount} USDT por ${network} y mándanos la captura con tu orden ${orderRef} (Boost x${mult.toFixed(1)}).`;
+      document.getElementById("order-box").style.display = "block";
+
+      lastOrderSummary =
+        `Orden: ${orderRef} | Usuario ID: ${playerId} | Paquete: Boost x${mult.toFixed(1)} | Monto: ${exactAmount} USDT | Red: ${network}`;
+
+      haptic("light");
+      showToast("Orden generada para envío de captura");
     });
 
-    async function copyText(id, okMsg) {
+    async function copyText(text, okMsg) {
       try {
-        await navigator.clipboard.writeText(document.getElementById(id).textContent);
+        await navigator.clipboard.writeText(text);
         showToast(okMsg);
-      } catch { showToast("Cópialo manualmente"); }
+      } catch {
+        showToast("Cópialo manualmente");
+      }
     }
-    document.getElementById("btn-copy-address").addEventListener("click", () => copyText("deposit-address", "Dirección copiada"));
-    document.getElementById("btn-copy-amount").addEventListener("click", () => copyText("pay-amount", "Monto copiado"));
+
+    document.getElementById("btn-copy-address").addEventListener("click", () =>
+      copyText(document.getElementById("deposit-address").textContent, "Dirección copiada")
+    );
+    document.getElementById("btn-copy-amount").addEventListener("click", () =>
+      copyText(document.getElementById("pay-amount").textContent, "Monto copiado")
+    );
+    document.getElementById("btn-copy-summary").addEventListener("click", () => {
+      if (!lastOrderSummary) return;
+      copyText(lastOrderSummary, "Resumen copiado para enviar con la captura");
+    });
 
     // Eventos de referidos
     document.getElementById("btn-copy-link").addEventListener("click", async () => {
@@ -696,7 +669,6 @@
     });
 
     render();
-    syncFromServer();
     setInterval(render, 2000);
   </script>
 </body>
