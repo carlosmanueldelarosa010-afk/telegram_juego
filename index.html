@@ -445,7 +445,7 @@
     <!-- PESTAÑA 3: BOOST CRIPTO (VERIFICACIÓN MANUAL POR CAPTURA) -->
     <section id="tab-crypto" class="tab-content">
       <div class="notice">
-        Envía el pago exacto a la dirección indicada y manda una <strong>captura de pantalla</strong> del comprobante (junto con tu referencia de orden) para verificación manual.
+        Cada compra genera un <strong>código aleatorio único</strong> vinculado a tu orden para que soporte lo valide tras revisar tu captura de pago.
       </div>
 
       <div class="card">
@@ -482,14 +482,14 @@
           <div id="deposit-address" style="margin-top:4px;">-</div>
           <div style="margin-top:8px;"><strong>Orden:</strong> <span id="order-ref">-</span></div>
           <div id="order-status" style="margin-top:8px; color:#fcd34d;">
-            📸 Toma captura del comprobante y envíala para revisión manual indicando tu número de orden.
+            📸 Toma captura del comprobante y envíala en soporte junto con el reporte de tu orden.
           </div>
           <div class="row-between" style="margin-top:10px;">
             <button id="btn-copy-amount" class="btn btn-outline">Copiar monto</button>
             <button id="btn-copy-address" class="btn btn-outline">Copiar dirección</button>
           </div>
           <button id="btn-copy-summary" class="btn btn-warn" style="width:100%; margin-top:8px;">
-            Copiar resumen para enviar captura
+            Copiar reporte para soporte
           </button>
           <button id="btn-send-proof" class="btn btn-green" style="width:100%; margin-top:8px;">
             Enviar captura en Telegram
@@ -498,11 +498,11 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Canjear código tras confirmación</div>
+        <div class="card-title">Canjear código asignado tras confirmación</div>
         <div class="card-desc">
-          Si ya enviaste tu captura y te aprobaron el pago, ingresa el código de activación que recibiste.
+          Una vez que soporte confirme tu captura y te habilite/entregue el código aleatorio de tu orden, ingrésalo aquí.
         </div>
-        <input id="redeem-code-input" type="text" placeholder="Ej. BOOST15" autocomplete="off" />
+        <input id="redeem-code-input" type="text" placeholder="Ej. CG-A7K9-M2P4" autocomplete="off" />
         <button id="btn-redeem-code" class="btn btn-green" style="width:100%;">Activar boost</button>
       </div>
     </section>
@@ -665,17 +665,6 @@
       "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
     };
 
-    const ACTIVATION_CODES = {
-      "BOOST15": 1.5,
-      "BOOST20": 2.0,
-      "BOOST30": 3.0,
-      "BOOST40": 4.0,
-      "BOOST60": 6.0,
-      "BOOST80": 8.0,
-      "BOOST100": 10.0,
-      "BOOST150": 15.0
-    };
-
     const REFERRAL_REWARDS = {
       inviterCoins: 200,
       inviteeCoins: 100,
@@ -684,7 +673,6 @@
       milestoneBoostBonus: 1.0
     };
 
-    // Escalera exigente hasta el rango máximo "Líder Supremo" (mínimo 100 invitados)
     const REFERRAL_RANKS = [
       { minInvites: 0,   name: "Novato",         boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0 },
       { minInvites: 3,   name: "Empleado",       boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100 },
@@ -733,6 +721,19 @@
     const startParam = tg?.initDataUnsafe?.start_param || null;
     const playerId = tgUser?.id ? String(tgUser.id) : "demo_user_1001";
 
+    function generateRandomBoostCode(mult) {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const randPart = (len) => {
+        let out = "";
+        for (let i = 0; i < len; i++) {
+          out += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return out;
+      };
+      const multTag = String(Math.round(mult * 10));
+      return `CG${multTag}-${randPart(4)}-${randPart(4)}`;
+    }
+
     function getCurrentSundayMidnightKey(nowMs = Date.now()) {
       const d = new Date(nowMs);
       const sundayMidnight = new Date(d);
@@ -771,6 +772,8 @@
       purchasedBoostMult: 1.0,
       productivityMultiplier: 1.0,
       boostCount: 0,
+      pendingBoostOrders: {},
+      usedBoostCodes: [],
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
       lastTick: Date.now(),
       lastClaim: Date.now(),
@@ -794,6 +797,8 @@
         const merged = {
           ...defaultState,
           ...parsed,
+          pendingBoostOrders: parsed.pendingBoostOrders || {},
+          usedBoostCodes: Array.isArray(parsed.usedBoostCodes) ? parsed.usedBoostCodes : [],
           rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) }
         };
         if (!merged.referralCode) {
@@ -819,8 +824,6 @@
       return Math.max(1, state.tapLevel + totalRigs);
     }
 
-    // Energía base según nivel:
-    // Nivel 50 -> 1,000 de energía | Nivel 100 -> 2,000 de energía | luego +20 por nivel
     function getLevelBaseEnergy(level) {
       if (level >= 100) {
         return 2000 + (level - 100) * 20;
@@ -1219,7 +1222,6 @@
     document.getElementById("payout-network").value = state.payoutNetwork || "USDT-TON";
     document.getElementById("payout-address-input").value = state.payoutAddress || "";
 
-    // Foto de perfil personalizada
     document.getElementById("btn-change-avatar").addEventListener("click", () => {
       document.getElementById("avatar-file-input").click();
     });
@@ -1241,7 +1243,6 @@
       reader.readAsDataURL(file);
     });
 
-    // Toque en el juego con animación
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
       if (state.energy <= 0) {
@@ -1383,7 +1384,7 @@
       applyReferralCode(startParam, true);
     }
 
-    // ===== Boost Cripto =====
+    // ===== Boost Cripto con código aleatorio por compra =====
     let lastOrderSummary = "";
 
     document.getElementById("btn-create-order").addEventListener("click", () => {
@@ -1402,20 +1403,31 @@
       const centsOffset = ((Date.now() % 89) + 11) / 1000;
       const exactAmount = (basePrice + centsOffset).toFixed(3);
       const orderRef = `ORD-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+      const randomSecretCode = generateRandomBoostCode(mult);
+
+      state.pendingBoostOrders[orderRef] = {
+        mult,
+        code: randomSecretCode,
+        amount: exactAmount,
+        network,
+        createdAt: Date.now()
+      };
+      saveState();
 
       document.getElementById("pay-amount").textContent = exactAmount;
       document.getElementById("pay-network").textContent = network;
       document.getElementById("deposit-address").textContent = address;
       document.getElementById("order-ref").textContent = orderRef;
-      document.getElementById("order-status").textContent =
-        `📸 Envía ${exactAmount} USDT por ${network} y mándanos la captura con tu orden ${orderRef} (Boost x${mult.toFixed(1)}).`;
+      document.getElementById("order-status").innerHTML =
+        `📸 Estado: <strong>Pendiente de verificación</strong>. Envía ${exactAmount} USDT por ${network} y manda tu captura con el reporte de soporte para recibir/validar tu código.`;
       document.getElementById("order-box").style.display = "block";
 
+      // El código aleatorio se incluye en el reporte destinado a tu chat de soporte
       lastOrderSummary =
-        `Orden: ${orderRef} | Usuario ID: ${playerId} | Paquete: Boost x${mult.toFixed(1)} | Monto: ${exactAmount} USDT | Red: ${network}`;
+        `Orden: ${orderRef} | Usuario ID: ${playerId} | Paquete: Boost x${mult.toFixed(1)} | Monto: ${exactAmount} USDT | Red: ${network} | Código Asignado: ${randomSecretCode}`;
 
       haptic("light");
-      showToast("Orden generada para envío de captura");
+      showToast("Orden y código aleatorio generados para soporte");
     });
 
     document.getElementById("btn-send-proof").addEventListener("click", async () => {
@@ -1425,7 +1437,7 @@
         } catch {}
       }
       openTelegramLink(SUPPORT_CHAT_URL);
-      showToast("Abriendo Telegram... pega el resumen y adjunta tu captura");
+      showToast("Abriendo Telegram... pega el reporte y adjunta tu captura");
     });
 
     document.getElementById("btn-redeem-code").addEventListener("click", () => {
@@ -1433,7 +1445,7 @@
       const code = (inputEl.value || "").trim().toUpperCase();
 
       if (!code) {
-        showToast("Escribe un código de activación");
+        showToast("Escribe el código de activación");
         return;
       }
 
@@ -1442,20 +1454,32 @@
         return;
       }
 
-      const mult = ACTIVATION_CODES[code];
-      if (!mult) {
-        showToast("Código no válido");
+      if (state.usedBoostCodes.includes(code)) {
+        showToast("Este código ya fue utilizado");
         return;
       }
 
-      state.purchasedBoostMult = Number((state.purchasedBoostMult * mult).toFixed(2));
+      const matchedEntry = Object.entries(state.pendingBoostOrders || {}).find(
+        ([, ord]) => ord && ord.code === code
+      );
+
+      if (!matchedEntry) {
+        showToast("Código no válido para esta cuenta");
+        return;
+      }
+
+      const [matchedOrderRef, matchedOrder] = matchedEntry;
+      state.purchasedBoostMult = Number((state.purchasedBoostMult * matchedOrder.mult).toFixed(2));
       state.boostCount += 1;
+      state.usedBoostCodes.push(code);
+      delete state.pendingBoostOrders[matchedOrderRef];
+
       syncRankAndBoostBenefits();
       inputEl.value = "";
       haptic("heavy");
       saveState();
       render();
-      showToast(`¡Boost activado! Multiplicador actual: x${state.productivityMultiplier.toFixed(1)}`);
+      showToast(`¡Boost x${matchedOrder.mult.toFixed(1)} activado!`);
     });
 
     // ===== Canjear monedas =====
@@ -1547,7 +1571,7 @@
     );
     document.getElementById("btn-copy-summary").addEventListener("click", () => {
       if (!lastOrderSummary) return;
-      copyText(lastOrderSummary, "Resumen copiado para enviar con la captura");
+      copyText(lastOrderSummary, "Reporte copiado para soporte");
     });
 
     document.querySelectorAll(".nav-btn").forEach((btn) => {
