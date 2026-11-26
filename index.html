@@ -189,6 +189,44 @@
       margin-bottom: 10px;
     }
 
+    .code-pill {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: #93c5fd;
+    }
+
+    .rank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .rank-row.me {
+      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(59, 130, 246, 0.14);
+    }
+
+    .tier-item {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 11px;
+      margin-bottom: 7px;
+      font-size: 12px;
+    }
+
+    .tier-item.active-tier {
+      border-color: rgba(16, 185, 129, 0.55);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
@@ -245,7 +283,7 @@
       <div>
         <div class="app-name">Cripto Game</div>
         <div id="user-name" class="user-info">Jugador</div>
-        <div id="ref-info" class="user-sub">Sin referido inicial</div>
+        <div id="ref-info" class="user-sub">Rango: Novato</div>
       </div>
       <div class="header-badges">
         <div id="player-level-badge" class="badge badge-lvl">Nivel 1</div>
@@ -382,18 +420,79 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 4: AMIGOS (REFERIDOS) -->
-    <section id="tab-friends" class="tab-content">
+    <!-- PESTAÑA 4: REFERIDOS -->
+    <section id="tab-referrals" class="tab-content">
       <div class="card">
-        <div class="card-title">Tu enlace de invitación</div>
+        <div class="card-title">Tu código automático de invitación</div>
         <div class="card-desc">
-          Comparte este enlace para que nuevos jugadores entren con tu parámetro <code>startapp</code>.
+          Generado según tu nombre. Regístralo en soporte para evitar duplicados y compártelo para ganar monedas, rangos y boosts.
         </div>
-        <div id="invite-link-box" class="ref-box">Cargando enlace...</div>
+
+        <div class="ref-box">
+          <div class="user-sub">Tu código de referido</div>
+          <div id="my-referral-code" class="code-pill" style="margin-top:4px;">-</div>
+          <div id="my-invite-link" class="user-sub" style="margin-top:6px; word-break:break-all;">-</div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:10px;">
+          <div class="stat-box">
+            <div class="stat-label">Invitados totales</div>
+            <div id="ref-count-val" class="stat-value">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Invitados semana</div>
+            <div id="ref-weekly-count-val" class="stat-value">0</div>
+          </div>
+        </div>
+
+        <div id="ref-progress-text" class="user-sub" style="margin-bottom:10px;">
+          Faltan 10 invitados para tu próximo boost extra de +1.0x.
+        </div>
+
         <div class="row-between">
-          <button id="btn-copy-link" class="btn btn-outline">Copiar enlace</button>
-          <button id="btn-share-tg" class="btn">Compartir en Telegram</button>
+          <button id="btn-copy-ref-code" class="btn btn-outline">Copiar código</button>
+          <button id="btn-share-ref-tg" class="btn">Invitar en Telegram</button>
         </div>
+        <button id="btn-register-code-tg" class="btn btn-warn" style="width:100%; margin-top:8px;">
+          Registrar mi código en soporte (sin repetir)
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Canjear código de invitación (1 por usuario)</div>
+        <div class="card-desc">
+          Solo puedes canjear <strong>1 código</strong> en toda tu cuenta. Al canjearlo recibes <strong>+100 monedas</strong>, el invitador directo <strong>+200 monedas</strong> y la cadena de niveles continúa sin límite.
+        </div>
+
+        <div id="redeemed-ref-status" class="notice" style="margin-bottom:10px;">
+          Estado: aún no has canjeado ningún código.
+        </div>
+
+        <input id="input-referral-code" type="text" placeholder="Escribe el código de invitación (Ej. CARLOS-4821)" autocomplete="off" />
+        <button id="btn-apply-referral-code" class="btn btn-green" style="width:100%;">
+          Canjear código de invitación
+        </button>
+
+        <div id="referral-chain-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="referral-chain-details">-</div>
+          <button id="btn-send-ref-log-tg" class="btn btn-outline" style="width:100%; margin-top:8px;">
+            Reportar cadena en soporte Telegram
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tu rango y beneficios por invitados</div>
+        <div id="current-rank-summary" class="notice" style="margin-bottom:10px;">-</div>
+        <div id="ranks-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Top 10 Semanal de Invitaciones</div>
+        <div id="weekly-reset-info" class="card-desc">
+          Se actualiza todos los domingos a las 12:00 a. m. (00:00).
+        </div>
+        <div id="weekly-leaderboard-list"></div>
       </div>
     </section>
 
@@ -467,7 +566,7 @@
     <button class="nav-btn active" data-tab="tab-game">Juego</button>
     <button class="nav-btn" data-tab="tab-rigs">Rigs</button>
     <button class="nav-btn" data-tab="tab-crypto">Boost</button>
-    <button class="nav-btn" data-tab="tab-friends">Amigos</button>
+    <button class="nav-btn" data-tab="tab-referrals">Referidos</button>
     <button class="nav-btn" data-tab="tab-redeem">Canjear</button>
   </nav>
 
@@ -489,6 +588,39 @@
       "BOOST100": 10.0,
       "BOOST150": 15.0
     };
+
+    const REFERRAL_REWARDS = {
+      inviterCoins: 200,         // Invitador directo recibe 200 monedas
+      inviteeCoins: 100,         // Nuevo invitado recibe 100 monedas
+      chainStepCoins: 100,       // Cada eslabón superior en la cadena infinita
+      milestoneStep: 10,         // Cada 10 invitados
+      milestoneBoostBonus: 1.0   // +1.0x boost extra cada 10 invitados
+    };
+
+    // Niveles/rangos de referidos con beneficios crecientes
+    const REFERRAL_RANKS = [
+      { minInvites: 0,  name: "Novato",       boostBonus: 0.0, maxEnergy: 100, rankCoinsBonus: 0 },
+      { minInvites: 1,  name: "Empleado",     boostBonus: 0.2, maxEnergy: 110, rankCoinsBonus: 50 },
+      { minInvites: 3,  name: "Gerente 1",    boostBonus: 0.5, maxEnergy: 125, rankCoinsBonus: 150 },
+      { minInvites: 6,  name: "Gerente 2",    boostBonus: 0.8, maxEnergy: 140, rankCoinsBonus: 300 },
+      { minInvites: 10, name: "Jefe",         boostBonus: 1.2, maxEnergy: 160, rankCoinsBonus: 500 },
+      { minInvites: 15, name: "Líder",        boostBonus: 1.6, maxEnergy: 180, rankCoinsBonus: 800 },
+      { minInvites: 25, name: "Profesional",  boostBonus: 2.2, maxEnergy: 210, rankCoinsBonus: 1500 },
+      { minInvites: 40, name: "Dueño",        boostBonus: 3.0, maxEnergy: 250, rankCoinsBonus: 3000 }
+    ];
+
+    const BASE_WEEKLY_TOP = [
+      { name: "CryptoMaster", invites: 19 },
+      { name: "TonHunter", invites: 15 },
+      { name: "TrxKing", invites: 12 },
+      { name: "NodeRunner", invites: 9 },
+      { name: "TapLegend", invites: 8 },
+      { name: "AlphaMiner", invites: 6 },
+      { name: "GemSeeker", invites: 5 },
+      { name: "BlockScout", invites: 4 },
+      { name: "CoinWave", invites: 3 },
+      { name: "BitStarter", invites: 2 }
+    ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
@@ -513,17 +645,55 @@
     const startParam = tg?.initDataUnsafe?.start_param || null;
     const playerId = tgUser?.id ? String(tgUser.id) : "demo_user_1001";
 
+    // Identificador de semana anclado al último domingo a las 00:00 (12:00 a. m.)
+    function getCurrentSundayMidnightKey(nowMs = Date.now()) {
+      const d = new Date(nowMs);
+      const sundayMidnight = new Date(d);
+      sundayMidnight.setHours(0, 0, 0, 0);
+      sundayMidnight.setDate(sundayMidnight.getDate() - sundayMidnight.getDay());
+      return sundayMidnight.getTime();
+    }
+
+    function getNextSundayMidnightDate(nowMs = Date.now()) {
+      const currentSunday = getCurrentSundayMidnightKey(nowMs);
+      return new Date(currentSunday + 7 * 24 * 3600 * 1000);
+    }
+
+    function generateAutoReferralCode() {
+      const rawName = (tgUser?.username || tgUser?.first_name || "JUGADOR")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toUpperCase()
+        .slice(0, 8) || "JUGADOR";
+
+      let hash = 0;
+      for (let i = 0; i < playerId.length; i++) {
+        hash = (hash * 31 + playerId.charCodeAt(i)) % 9000;
+      }
+      const suffix = String(1000 + hash).slice(-4);
+      return `${rawName}-${suffix}`;
+    }
+
     const defaultState = {
       coins: 100,
       energy: 100,
       maxEnergy: 100,
       tapLevel: 1,
+      purchasedBoostMult: 1.0,
       productivityMultiplier: 1.0,
       boostCount: 0,
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
       lastTick: Date.now(),
       lastClaim: Date.now(),
       referredBy: null,
+      redeemedReferralCode: null,
+      referralCode: null,
+      referralCount: 0,
+      weeklyReferralCount: 0,
+      weekAnchorKey: getCurrentSundayMidnightKey(),
+      awardedRankMinInvites: 0,
       payoutNetwork: "USDT-TON",
       payoutAddress: ""
     };
@@ -531,25 +701,69 @@
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ...defaultState };
+        if (!raw) return { ...defaultState, referralCode: generateAutoReferralCode() };
         const parsed = JSON.parse(raw);
-        return {
+        const merged = {
           ...defaultState,
           ...parsed,
           rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) }
         };
+        if (!merged.referralCode) {
+          merged.referralCode = generateAutoReferralCode();
+        }
+        return merged;
       } catch {
-        return { ...defaultState };
+        return { ...defaultState, referralCode: generateAutoReferralCode() };
       }
     }
 
     let state = loadState();
     if (state.productivityMultiplier > 1 && !state.boostCount) state.boostCount = 1;
-
-    if (startParam && startParam !== playerId && !state.referredBy) {
-      state.referredBy = startParam;
-      state.coins += 50;
+    if (!state.purchasedBoostMult || state.purchasedBoostMult < 1) {
+      state.purchasedBoostMult = state.productivityMultiplier || 1.0;
     }
+
+    function checkWeeklyReset() {
+      const currentWeekKey = getCurrentSundayMidnightKey();
+      if (state.weekAnchorKey !== currentWeekKey) {
+        state.weekAnchorKey = currentWeekKey;
+        state.weeklyReferralCount = 0;
+      }
+    }
+
+    function getCurrentReferralRank() {
+      let current = REFERRAL_RANKS[0];
+      for (const r of REFERRAL_RANKS) {
+        if ((state.referralCount || 0) >= r.minInvites) {
+          current = r;
+        }
+      }
+      return current;
+    }
+
+    function syncRankAndBoostBenefits() {
+      checkWeeklyReset();
+      const rank = getCurrentReferralRank();
+      state.maxEnergy = rank.maxEnergy;
+      if (state.energy > state.maxEnergy) {
+        state.energy = state.maxEnergy;
+      }
+
+      if (rank.minInvites > (state.awardedRankMinInvites || 0) && rank.rankCoinsBonus > 0) {
+        state.awardedRankMinInvites = rank.minInvites;
+        state.coins += rank.rankCoinsBonus;
+      }
+
+      const milestoneBoost =
+        Math.floor((state.referralCount || 0) / REFERRAL_REWARDS.milestoneStep) *
+        REFERRAL_REWARDS.milestoneBoostBonus;
+
+      state.productivityMultiplier = Number(
+        (state.purchasedBoostMult + rank.boostBonus + milestoneBoost).toFixed(2)
+      );
+    }
+
+    syncRankAndBoostBenefits();
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -562,7 +776,7 @@
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(() => {
         el.style.display = "none";
-      }, 2600);
+      }, 2700);
     }
 
     function haptic(type = "light") {
@@ -579,7 +793,6 @@
       return Math.max(1, state.tapLevel + totalRigs);
     }
 
-    // Bloquea subir de nivel si el siguiente nivel alcanzaría el Nivel 12 sin tener boost
     function isBoostRequiredBeforeNextLevel() {
       const nextLevel = getPlayerLevel() + 1;
       return nextLevel >= REQUIRED_LEVEL_FOR_BOOST && state.boostCount <= 0;
@@ -594,7 +807,6 @@
       return getPlayerLevel() >= MIN_REDEEM_LEVEL && hasValidWallet();
     }
 
-    // Crecimiento progresivo más exigente conforme sube el nivel de toque
     function getTapUpgradeCost() {
       return Math.floor(50 * Math.pow(1.95, state.tapLevel - 1));
     }
@@ -673,6 +885,78 @@
       });
     }
 
+    function renderReferralsSection() {
+      checkWeeklyReset();
+      const rank = getCurrentReferralRank();
+
+      document.getElementById("my-referral-code").textContent = state.referralCode;
+      const inviteUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`;
+      document.getElementById("my-invite-link").textContent = inviteUrl;
+
+      const count = state.referralCount || 0;
+      const weeklyCount = state.weeklyReferralCount || 0;
+      const remainder = count % REFERRAL_REWARDS.milestoneStep;
+      const neededForNext = remainder === 0 ? REFERRAL_REWARDS.milestoneStep : REFERRAL_REWARDS.milestoneStep - remainder;
+
+      document.getElementById("ref-count-val").textContent = String(count);
+      document.getElementById("ref-weekly-count-val").textContent = String(weeklyCount);
+      document.getElementById("ref-progress-text").textContent =
+        `Faltan ${neededForNext} invitado(s) para tu próximo boost extra de +${REFERRAL_REWARDS.milestoneBoostBonus.toFixed(1)}x.`;
+
+      const statusEl = document.getElementById("redeemed-ref-status");
+      const inputEl = document.getElementById("input-referral-code");
+      const btnEl = document.getElementById("btn-apply-referral-code");
+
+      if (state.redeemedReferralCode) {
+        statusEl.textContent = `✅ Ya canjeaste tu único código permitido: ${state.redeemedReferralCode}.`;
+        inputEl.value = state.redeemedReferralCode;
+        inputEl.disabled = true;
+        btnEl.disabled = true;
+      } else {
+        statusEl.textContent = "Estado: aún no has canjeado ningún código (tienes derecho a 1 canje).";
+        inputEl.disabled = false;
+        btnEl.disabled = false;
+      }
+
+      document.getElementById("current-rank-summary").innerHTML =
+        `Rango actual: <strong>${rank.name}</strong> (${count} invitados) · Bonus rango: <strong>+${rank.boostBonus.toFixed(1)}x</strong> · Energía máx.: <strong>${rank.maxEnergy}</strong>`;
+
+      const ranksListEl = document.getElementById("ranks-list");
+      ranksListEl.innerHTML = "";
+      REFERRAL_RANKS.forEach((r) => {
+        const isActive = rank.name === r.name;
+        const div = document.createElement("div");
+        div.className = `tier-item ${isActive ? "active-tier" : ""}`;
+        div.innerHTML =
+          `<div class="row-between"><strong>${r.name}</strong><span class="user-sub">${r.minInvites}+ invitados</span></div>` +
+          `<div class="user-sub" style="margin-top:3px;">+${r.boostBonus.toFixed(1)}x boost · ${r.maxEnergy} energía máx. · +${r.rankCoinsBonus} monedas al subir</div>`;
+        ranksListEl.appendChild(div);
+      });
+
+      const nextSunday = getNextSundayMidnightDate();
+      document.getElementById("weekly-reset-info").textContent =
+        `Próximo reinicio semanal: domingo a las 12:00 a. m. (${nextSunday.toLocaleDateString("es-DO")}).`;
+
+      const meLabel = tgUser?.username ? `@${tgUser.username}` : (tgUser?.first_name || "Tú");
+      const combinedTop = [
+        ...BASE_WEEKLY_TOP.map((item) => ({ ...item, isMe: false })),
+        { name: `${meLabel} (Tú)`, invites: weeklyCount, isMe: true }
+      ]
+        .sort((a, b) => b.invites - a.invites)
+        .slice(0, 10);
+
+      const lbEl = document.getElementById("weekly-leaderboard-list");
+      lbEl.innerHTML = "";
+      combinedTop.forEach((entry, idx) => {
+        const row = document.createElement("div");
+        row.className = `rank-row ${entry.isMe ? "me" : ""}`;
+        row.innerHTML =
+          `<span><strong>#${idx + 1}</strong> ${entry.name}</span>` +
+          `<strong>${entry.invites} inv.</strong>`;
+        lbEl.appendChild(row);
+      });
+    }
+
     function updateSelectedTierInfo() {
       const selectEl = document.getElementById("redeem-tier-select");
       const reqCoins = Number(selectEl.value || 10000);
@@ -733,6 +1017,8 @@
 
     function render() {
       updatePassiveEnergy();
+      syncRankAndBoostBenefits();
+      const rank = getCurrentReferralRank();
 
       const fullName = tgUser
         ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
@@ -740,14 +1026,13 @@
       document.getElementById("user-name").textContent =
         tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
 
-      document.getElementById("ref-info").textContent = state.referredBy
-        ? `Referido por ID: ${state.referredBy}`
-        : "Sin referido inicial";
+      document.getElementById("ref-info").textContent =
+        `Rango: ${rank.name} · Código: ${state.referralCode}`;
 
       const playerLevel = getPlayerLevel();
       document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
       document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
-      document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} / ${MAX_BOOST_PURCHASES}`;
+      document.getElementById("boost-count").textContent = `Boosts comprados: ${state.boostCount} / ${MAX_BOOST_PURCHASES}`;
       document.getElementById("coins-val").textContent = state.coins.toLocaleString();
       document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
 
@@ -766,10 +1051,8 @@
       document.getElementById("pending-coins").textContent = pending.toLocaleString();
       document.getElementById("btn-claim").disabled = pending <= 0;
 
-      const inviteUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${playerId}`;
-      document.getElementById("invite-link-box").textContent = inviteUrl;
-
       renderRigs();
+      renderReferralsSection();
       renderRedeemSection();
     }
 
@@ -820,8 +1103,8 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Boost Cripto =====
-    let lastOrderSummary = "";
+    // ===== Referidos (cadena infinita, rangos y top 10 semanal) =====
+    let lastReferralLogText = "";
 
     function openTelegramLink(url) {
       if (tg?.openTelegramLink && url.startsWith("https://t.me/")) {
@@ -833,9 +1116,94 @@
       }
     }
 
+    function applyReferralCode(rawCode, fromStartParam = false) {
+      checkWeeklyReset();
+      const code = (rawCode || "").trim().toUpperCase();
+      if (!code) {
+        if (!fromStartParam) showToast("Escribe un código de invitación");
+        return;
+      }
+
+      if (state.redeemedReferralCode) {
+        if (!fromStartParam) showToast("Solo puedes canjear 1 código de invitación por usuario");
+        return;
+      }
+
+      if (code === state.referralCode) {
+        if (!fromStartParam) showToast("No puedes canjear tu propio código");
+        return;
+      }
+
+      state.redeemedReferralCode = code;
+      state.referredBy = code;
+      state.coins += REFERRAL_REWARDS.inviteeCoins;
+      syncRankAndBoostBenefits();
+      saveState();
+      render();
+      haptic("heavy");
+
+      const chainTrail = [code, state.referralCode].join(" -> ");
+      lastReferralLogText =
+        `Cadena Infinita Referido | Usuario: ${playerId} | Cadena: ${chainTrail} | ` +
+        `Nuevo Invitado: +${REFERRAL_REWARDS.inviteeCoins} | Invitador Directo: +${REFERRAL_REWARDS.inviterCoins} | ` +
+        `Eslabones Superiores: +${REFERRAL_REWARDS.chainStepCoins} c/u`;
+
+      document.getElementById("referral-chain-details").innerHTML =
+        `<div><strong>¡Código aplicado!</strong> Recibiste <strong>+${REFERRAL_REWARDS.inviteeCoins} monedas</strong>.</div>` +
+        `<div style="margin-top:4px;">Cadena registrada: <strong>${chainTrail}</strong> (sin límite de niveles)</div>` +
+        `<div style="margin-top:4px;">Reparto previsto: <strong>+${REFERRAL_REWARDS.inviterCoins}</strong> invitador directo · <strong>+${REFERRAL_REWARDS.inviteeCoins}</strong> tú · <strong>+${REFERRAL_REWARDS.chainStepCoins}</strong> por cada nivel superior en la cadena.</div>`;
+      document.getElementById("referral-chain-box").style.display = "block";
+      showToast(`¡Código canjeado! +${REFERRAL_REWARDS.inviteeCoins} monedas`);
+    }
+
+    document.getElementById("btn-copy-ref-code").addEventListener("click", () => {
+      copyText(state.referralCode, "Código de referido copiado");
+    });
+
+    document.getElementById("btn-share-ref-tg").addEventListener("click", () => {
+      const inviteUrl = encodeURIComponent(
+        `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`
+      );
+      const text = encodeURIComponent(
+        `¡Únete a Cripto Game con mi código ${state.referralCode} y gana +100 monedas!`
+      );
+      openTelegramLink(`https://t.me/share/url?url=${inviteUrl}&text=${text}`);
+    });
+
+    document.getElementById("btn-register-code-tg").addEventListener("click", async () => {
+      const regText =
+        `Registro de Código Único | Usuario ID: ${playerId} | Nombre: ${tgUser?.first_name || "Jugador"} | Código: ${state.referralCode}`;
+      try {
+        await navigator.clipboard.writeText(regText);
+      } catch {}
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo soporte... pega tu código para registrarlo sin repetir");
+    });
+
+    document.getElementById("btn-apply-referral-code").addEventListener("click", () => {
+      applyReferralCode(document.getElementById("input-referral-code").value, false);
+    });
+
+    document.getElementById("btn-send-ref-log-tg").addEventListener("click", async () => {
+      if (lastReferralLogText) {
+        try {
+          await navigator.clipboard.writeText(lastReferralLogText);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo soporte... pega el reporte de cadena");
+    });
+
+    if (startParam && !state.redeemedReferralCode) {
+      applyReferralCode(startParam, true);
+    }
+
+    // ===== Boost Cripto =====
+    let lastOrderSummary = "";
+
     document.getElementById("btn-create-order").addEventListener("click", () => {
       if (state.boostCount >= MAX_BOOST_PURCHASES) {
-        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`);
+        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts comprados`);
         return;
       }
 
@@ -885,7 +1253,7 @@
       }
 
       if (state.boostCount >= MAX_BOOST_PURCHASES) {
-        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`);
+        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts comprados`);
         return;
       }
 
@@ -895,8 +1263,9 @@
         return;
       }
 
-      state.productivityMultiplier = Number((state.productivityMultiplier * mult).toFixed(2));
+      state.purchasedBoostMult = Number((state.purchasedBoostMult * mult).toFixed(2));
       state.boostCount += 1;
+      syncRankAndBoostBenefits();
       inputEl.value = "";
       haptic("heavy");
       saveState();
@@ -996,25 +1365,6 @@
       copyText(lastOrderSummary, "Resumen copiado para enviar con la captura");
     });
 
-    // Eventos de referidos
-    document.getElementById("btn-copy-link").addEventListener("click", async () => {
-      const link = document.getElementById("invite-link-box").textContent;
-      try {
-        await navigator.clipboard.writeText(link);
-        showToast("Enlace copiado");
-      } catch {
-        showToast("Copia el enlace manualmente");
-      }
-    });
-
-    document.getElementById("btn-share-tg").addEventListener("click", () => {
-      const link = encodeURIComponent(document.getElementById("invite-link-box").textContent);
-      const text = encodeURIComponent("¡Únete a mi juego en Telegram con este enlace!");
-      const shareUrl = `https://t.me/share/url?url=${link}&text=${text}`;
-      openTelegramLink(shareUrl);
-    });
-
-    // Navegación por pestañas
     document.querySelectorAll(".nav-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         switchTab(btn.getAttribute("data-tab"));
