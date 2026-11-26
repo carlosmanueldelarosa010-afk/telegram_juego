@@ -34,11 +34,7 @@
       min-height: 100vh;
     }
 
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      padding: 16px;
-    }
+    .container { max-width: 480px; margin: 0 auto; padding: 16px; }
 
     .header {
       display: flex;
@@ -51,16 +47,9 @@
       margin-bottom: 14px;
     }
 
-    .user-info {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .user-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
+    .app-name { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .user-info { font-size: 14px; font-weight: 600; }
+    .user-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     .badge {
       background: rgba(59, 130, 246, 0.16);
@@ -72,30 +61,10 @@
       font-weight: 700;
     }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .stat-box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .stat-value {
-      font-size: 20px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+    .stat-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .stat-label { font-size: 12px; color: var(--muted); }
+    .stat-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
 
     .tap-area {
       background: var(--card);
@@ -119,66 +88,18 @@
       box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
       transition: transform 0.08s ease;
     }
+    .tap-btn:active { transform: scale(0.95); }
 
-    .tap-btn:active {
-      transform: scale(0.95);
-    }
+    .energy-wrap { margin-top: 18px; text-align: left; }
+    .energy-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .bar-bg { width: 100%; height: 10px; background: var(--card-2); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.2s ease; }
 
-    .energy-wrap {
-      margin-top: 18px;
-      text-align: left;
-    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 15px; font-weight: 700; margin: 0 0 6px 0; }
+    .card-desc { font-size: 13px; color: var(--muted); margin: 0 0 12px 0; line-height: 1.4; }
 
-    .energy-top {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .bar-bg {
-      width: 100%;
-      height: 10px;
-      background: var(--card-2);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg, #10b981, #34d399);
-      transition: width 0.2s ease;
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      margin: 0 0 6px 0;
-    }
-
-    .card-desc {
-      font-size: 13px;
-      color: var(--muted);
-      margin: 0 0 12px 0;
-      line-height: 1.4;
-    }
-
-    .row-between {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
+    .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 
     .btn {
       border: none;
@@ -190,26 +111,10 @@
       color: #fff;
       background: var(--accent);
     }
-
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    .btn-green {
-      background: var(--accent-2);
-    }
-
-    .btn-warn {
-      background: var(--warn);
-      color: #111827;
-    }
-
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text);
-    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-green { background: var(--accent-2); }
+    .btn-warn { background: var(--warn); color: #111827; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
     select, input {
       width: 100%;
@@ -224,9 +129,9 @@
 
     .notice {
       font-size: 12px;
-      color: #fcd34d;
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.28);
+      color: #cbd5e1;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 12px;
       padding: 10px 12px;
       line-height: 1.4;
@@ -244,13 +149,8 @@
       margin-bottom: 10px;
     }
 
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     .bottom-nav {
       position: fixed;
@@ -276,11 +176,7 @@
       border-radius: 10px;
       cursor: pointer;
     }
-
-    .nav-btn.active {
-      color: #fff;
-      background: rgba(59, 130, 246, 0.2);
-    }
+    .nav-btn.active { color: #fff; background: rgba(59, 130, 246, 0.2); }
 
     .toast {
       position: fixed;
@@ -307,7 +203,8 @@
   <div class="container">
     <div class="header">
       <div>
-        <div id="user-name" class="user-info">Cripto Game</div>
+        <div class="app-name">Cripto Game</div>
+        <div id="user-name" class="user-info">Jugador</div>
         <div id="ref-info" class="user-sub">Sin referido inicial</div>
       </div>
       <div id="boost-badge" class="badge">Boost: x1.0</div>
@@ -374,7 +271,7 @@
     <!-- PESTAÑA 3: BOOST CRIPTO (PRODUCTIVIDAD) -->
     <section id="tab-crypto" class="tab-content">
       <div class="notice">
-        Simulador de mecánica con pago cripto. En producción, la acreditación del Boost debe confirmarse desde tu servidor/webhook y cumplir las reglas de Telegram y normativas locales.
+        Debes confirmar el pago antes de que se acredite el boost. La confirmación puede tardar de 15 a 25 minutos.
       </div>
 
       <div class="card">
@@ -382,32 +279,39 @@
         <div class="card-desc">
           Elige un paquete de productividad para multiplicar tu ganancia por toque y la producción de tus Rigs.
         </div>
+        <div id="boost-count" class="user-sub" style="margin-bottom:10px;"></div>
 
         <label class="user-sub">Paquete de productividad</label>
         <select id="boost-pack">
-          <option value="1.5|2.00">Boost x1.5 de productividad — $2.00 (equiv. cripto)</option>
-          <option value="2.0|4.50">Boost x2.0 de productividad — $4.50 (equiv. cripto)</option>
-          <option value="3.0|9.00">Boost x3.0 de productividad — $9.00 (equiv. cripto)</option>
+          <option value="1.5">Boost x1.5 de productividad — $5.99</option>
+          <option value="2.0">Boost x2.0 de productividad — $10.99</option>
+          <option value="3.0">Boost x3.0 de productividad — $17.99</option>
+          <option value="4.0">Boost x4.0 de productividad — $25.99</option>
+          <option value="6.0">Boost x6.0 de productividad — $45.99</option>
+          <option value="8.0">Boost x8.0 de productividad — $59.99</option>
+          <option value="10.0">Boost x10.0 de productividad — $74.99</option>
+          <option value="15.0">Boost x15.0 de productividad — $99.99</option>
         </select>
 
-        <label class="user-sub">Red / Moneda de pago</label>
+        <label class="user-sub">Red de pago</label>
         <select id="crypto-network">
-          <option value="TON">TON (The Open Network)</option>
           <option value="USDT-TON">USDT (Red TON)</option>
           <option value="USDT-TRC20">USDT (Red TRC20)</option>
         </select>
 
-        <div class="ref-box">
-          <div><strong>Dirección de pago de ejemplo (reemplazar en producción):</strong></div>
-          <div id="deposit-address" style="margin-top:4px;">UQDemoDireccionCriptoEjemplo1234567890ABCD</div>
-          <div style="margin-top:6px;"><strong>Referencia de orden:</strong> <span id="order-ref">-</span></div>
-        </div>
+        <button id="btn-create-order" class="btn" style="width:100%;">Generar orden de pago</button>
 
-        <input id="tx-hash-input" type="text" placeholder="Opcional: pega aquí el hash de transacción (TXID)" />
-
-        <div class="row-between">
-          <button id="btn-create-order" class="btn btn-outline">Generar orden</button>
-          <button id="btn-confirm-demo" class="btn btn-warn">Simular pago confirmado</button>
+        <div id="order-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div><strong>Envía EXACTAMENTE:</strong> <span id="pay-amount">-</span> USDT (<span id="pay-network">-</span>)</div>
+          <div class="user-sub" style="margin-top:2px;">El monto incluye decimales únicos para identificar tu pago. No lo redondees.</div>
+          <div style="margin-top:8px;"><strong>A esta dirección:</strong></div>
+          <div id="deposit-address" style="margin-top:4px;">-</div>
+          <div style="margin-top:8px;"><strong>Orden:</strong> <span id="order-ref">-</span></div>
+          <div id="order-status" style="margin-top:8px; color:#fcd34d;">-</div>
+          <div class="row-between" style="margin-top:10px;">
+            <button id="btn-copy-amount" class="btn btn-outline">Copiar monto</button>
+            <button id="btn-copy-address" class="btn btn-outline">Copiar dirección</button>
+          </div>
         </div>
       </div>
     </section>
@@ -437,6 +341,9 @@
 
   <script>
     const BOT_USERNAME = "TuBot"; // Cambia esto por el username de tu bot sin @
+    // URL de tu servidor (backend) que verifica los pagos
+    const API_URL = "https://TU-SERVIDOR.com";
+    const MAX_BOOST_PURCHASES = 2; // Cuántos boosts se pueden acumular
     const MAX_ACCUM_SECONDS = 6 * 3600; // Tope de acumulación pasiva: 6 horas
     const STORAGE_KEY = "tg_mini_game_state_v1";
 
@@ -462,6 +369,7 @@
       maxEnergy: 100,
       tapLevel: 1,
       productivityMultiplier: 1.0,
+      boostCount: 0,
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
       lastTick: Date.now(),
       lastClaim: Date.now(),
@@ -484,6 +392,7 @@
     }
 
     let state = loadState();
+    if (state.productivityMultiplier > 1 && !state.boostCount) state.boostCount = 1;
 
     // Aplicar referido inicial si existe y no es el mismo usuario
     if (startParam && startParam !== playerId && !state.referredBy) {
@@ -592,15 +501,18 @@
     function render() {
       updatePassiveEnergy();
 
-      document.getElementById("user-name").textContent = tgUser
-        ? `${tgUser.first_name} (@${tgUser.username || playerId})`
-        : `Modo prueba (${playerId})`;
+      const fullName = tgUser
+        ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
+        : "Jugador";
+      document.getElementById("user-name").textContent =
+        tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
 
       document.getElementById("ref-info").textContent = state.referredBy
         ? `Referido por ID: ${state.referredBy}`
         : "Sin referido inicial";
 
       document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
+      document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} / ${MAX_BOOST_PURCHASES}`;
       document.getElementById("coins-val").textContent = state.coins.toLocaleString();
       document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
 
@@ -659,34 +571,95 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // Eventos de Boost Cripto
-    function generateOrderRef() {
-      const net = document.getElementById("crypto-network").value;
-      const pack = document.getElementById("boost-pack").value.split("|")[0];
-      const code = `ORD-${playerId}-X${pack}-${Math.floor(1000 + Math.random() * 9000)}-${net}`;
-      document.getElementById("order-ref").textContent = code;
-      return code;
+    // ===== Boost Cripto (el servidor verifica el pago y acredita el boost) =====
+    let currentOrderId = null;
+    let orderTimer = null;
+
+    async function api(path, options = {}) {
+      const res = await fetch(API_URL + path, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "tma " + (tg?.initData || "")
+        }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Error del servidor");
+      return data;
     }
 
-    generateOrderRef();
-    document.getElementById("boost-pack").addEventListener("change", generateOrderRef);
-    document.getElementById("crypto-network").addEventListener("change", generateOrderRef);
-
-    document.getElementById("btn-create-order").addEventListener("click", () => {
-      const ref = generateOrderRef();
-      showToast(`Orden generada: ${ref}`);
-    });
-
-    document.getElementById("btn-confirm-demo").addEventListener("click", () => {
-      // En producción, este cambio debe ocurrir tras validar el pago en tu backend
-      const [multStr] = document.getElementById("boost-pack").value.split("|");
-      const newMult = parseFloat(multStr);
-      state.productivityMultiplier = Math.max(state.productivityMultiplier, newMult);
-      haptic("heavy");
+    function applyServerBoost(data) {
+      state.productivityMultiplier = data.mult;
+      state.boostCount = data.boostCount;
       saveState();
       render();
-      showToast(`Productividad actualizada a x${state.productivityMultiplier.toFixed(1)}`);
+    }
+
+    async function syncFromServer() {
+      if (!tg?.initData) return;
+      try { applyServerBoost(await api("/api/me")); } catch (e) { console.warn(e.message); }
+    }
+
+    function pollOrder() {
+      clearInterval(orderTimer);
+      orderTimer = setInterval(async () => {
+        try {
+          const o = await api(`/api/orders/${currentOrderId}`);
+          const st = document.getElementById("order-status");
+          if (o.status === "paid") {
+            clearInterval(orderTimer);
+            st.textContent = "✅ Pago confirmado. ¡Boost acreditado!";
+            applyServerBoost(o);
+            showToast("¡Boost acreditado!");
+          } else if (o.status === "paid_not_applied") {
+            clearInterval(orderTimer);
+            st.textContent = "Pago recibido, pero ya tienes el máximo de boosts. Contacta soporte.";
+          } else if (o.status === "expired") {
+            clearInterval(orderTimer);
+            st.textContent = "La orden expiró. Genera una nueva si aún no pagaste.";
+          } else {
+            st.textContent = "⏳ Esperando confirmación del pago (puede tardar de 15 a 25 minutos)...";
+          }
+        } catch (e) { /* reintenta en el siguiente ciclo */ }
+      }, 15000);
+    }
+
+    document.getElementById("btn-create-order").addEventListener("click", async () => {
+      if (!tg?.initData) { showToast("Abre el juego desde Telegram para comprar"); return; }
+      if (state.boostCount >= MAX_BOOST_PURCHASES) { showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`); return; }
+      const btn = document.getElementById("btn-create-order");
+      btn.disabled = true;
+      try {
+        const o = await api("/api/orders", {
+          method: "POST",
+          body: JSON.stringify({
+            pack: document.getElementById("boost-pack").value,
+            network: document.getElementById("crypto-network").value
+          })
+        });
+        currentOrderId = o.orderId;
+        document.getElementById("pay-amount").textContent = o.amount;
+        document.getElementById("pay-network").textContent = o.network;
+        document.getElementById("deposit-address").textContent = o.address;
+        document.getElementById("order-ref").textContent = o.orderId;
+        document.getElementById("order-status").textContent = "⏳ Esperando tu pago. Tienes 60 minutos para enviarlo.";
+        document.getElementById("order-box").style.display = "block";
+        pollOrder();
+      } catch (e) {
+        showToast(e.message);
+      } finally {
+        btn.disabled = false;
+      }
     });
+
+    async function copyText(id, okMsg) {
+      try {
+        await navigator.clipboard.writeText(document.getElementById(id).textContent);
+        showToast(okMsg);
+      } catch { showToast("Cópialo manualmente"); }
+    }
+    document.getElementById("btn-copy-address").addEventListener("click", () => copyText("deposit-address", "Dirección copiada"));
+    document.getElementById("btn-copy-amount").addEventListener("click", () => copyText("pay-amount", "Monto copiado"));
 
     // Eventos de referidos
     document.getElementById("btn-copy-link").addEventListener("click", async () => {
@@ -723,6 +696,7 @@
     });
 
     render();
+    syncFromServer();
     setInterval(render, 2000);
   </script>
 </body>
