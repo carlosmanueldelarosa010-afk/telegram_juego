@@ -40,6 +40,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -47,15 +48,59 @@
       margin-bottom: 14px;
     }
 
-    .app-name { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
-    .user-info { font-size: 14px; font-weight: 600; }
-    .user-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+
+    .avatar-img, .avatar-fallback {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(59, 130, 246, 0.45);
+      background: var(--card-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #93c5fd;
+    }
+
+    .avatar-edit-btn {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      background: var(--accent);
+      color: #fff;
+      border: 2px solid var(--card);
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      cursor: pointer;
+    }
+
+    .app-name { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+    .user-info { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     .header-badges {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
       gap: 6px;
+      flex-shrink: 0;
     }
 
     .badge {
@@ -80,12 +125,21 @@
     .stat-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
 
     .tap-area {
+      position: relative;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 22px 16px;
       text-align: center;
       margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .tap-stage {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .tap-btn {
@@ -101,7 +155,30 @@
       box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
       transition: transform 0.08s ease;
     }
-    .tap-btn:active { transform: scale(0.95); }
+    .tap-btn:active { transform: scale(0.94); }
+    .tap-btn.tap-pulse { animation: tapPulse 0.18s ease; }
+
+    @keyframes tapPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.93); }
+      100% { transform: scale(1); }
+    }
+
+    .float-gain {
+      position: absolute;
+      font-size: 18px;
+      font-weight: 800;
+      color: #6ee7b7;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+      pointer-events: none;
+      animation: floatUp 0.7s ease-out forwards;
+      z-index: 5;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.95); }
+      100% { opacity: 0; transform: translate(-50%, -68px) scale(1.12); }
+    }
 
     .energy-wrap { margin-top: 18px; text-align: left; }
     .energy-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -277,13 +354,21 @@
 </head>
 <body>
   <div id="toast" class="toast"></div>
+  <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" />
 
   <div class="container">
     <div class="header">
-      <div>
-        <div class="app-name">Cripto Game</div>
-        <div id="user-name" class="user-info">Jugador</div>
-        <div id="ref-info" class="user-sub">Rango: Novato</div>
+      <div class="header-left">
+        <div class="avatar-wrap">
+          <img id="avatar-img" class="avatar-img" style="display:none;" alt="Foto de perfil" />
+          <div id="avatar-fallback" class="avatar-fallback">CG</div>
+          <button id="btn-change-avatar" class="avatar-edit-btn" type="button">Foto</button>
+        </div>
+        <div style="min-width:0;">
+          <div class="app-name">Cripto Game</div>
+          <div id="user-name" class="user-info">Jugador</div>
+          <div id="ref-info" class="user-sub">Rango: Novato</div>
+        </div>
       </div>
       <div class="header-badges">
         <div id="player-level-badge" class="badge badge-lvl">Nivel 1</div>
@@ -305,10 +390,12 @@
     <!-- PESTAÑA 1: JUEGO -->
     <section id="tab-game" class="tab-content active">
       <div class="tap-area">
-        <button id="tap-btn" class="tap-btn">TOCAR<br/>+<span id="tap-power">1</span></button>
+        <div id="tap-stage" class="tap-stage">
+          <button id="tap-btn" class="tap-btn">TOCAR<br/>+<span id="tap-power">1</span></button>
+        </div>
         <div class="energy-wrap">
           <div class="energy-top">
-            <span>Energía</span>
+            <span>Energía (se recarga incluso fuera del bot)</span>
             <span id="energy-text">100 / 100</span>
           </div>
           <div class="bar-bg">
@@ -341,7 +428,7 @@
       <div class="card">
         <div class="card-title">Acumulador de Rigs (tope 6h)</div>
         <div class="card-desc">
-          Simulación interna del juego. Acumula monedas según tus Rigs activos y tu multiplicador de productividad.
+          Acumula monedas automáticamente incluso cuando estás fuera del bot (hasta un máximo de 6 horas).
         </div>
         <div class="row-between">
           <div>
@@ -590,34 +677,34 @@
     };
 
     const REFERRAL_REWARDS = {
-      inviterCoins: 200,         // Invitador directo recibe 200 monedas
-      inviteeCoins: 100,         // Nuevo invitado recibe 100 monedas
-      chainStepCoins: 100,       // Cada eslabón superior en la cadena infinita
-      milestoneStep: 10,         // Cada 10 invitados
-      milestoneBoostBonus: 1.0   // +1.0x boost extra cada 10 invitados
+      inviterCoins: 200,
+      inviteeCoins: 100,
+      chainStepCoins: 100,
+      milestoneStep: 10,
+      milestoneBoostBonus: 1.0
     };
 
-    // Niveles/rangos de referidos con beneficios crecientes
+    // Escalera exigente hasta el rango máximo "Líder Supremo" (mínimo 100 invitados)
     const REFERRAL_RANKS = [
-      { minInvites: 0,  name: "Novato",       boostBonus: 0.0, maxEnergy: 100, rankCoinsBonus: 0 },
-      { minInvites: 1,  name: "Empleado",     boostBonus: 0.2, maxEnergy: 110, rankCoinsBonus: 50 },
-      { minInvites: 3,  name: "Gerente 1",    boostBonus: 0.5, maxEnergy: 125, rankCoinsBonus: 150 },
-      { minInvites: 6,  name: "Gerente 2",    boostBonus: 0.8, maxEnergy: 140, rankCoinsBonus: 300 },
-      { minInvites: 10, name: "Jefe",         boostBonus: 1.2, maxEnergy: 160, rankCoinsBonus: 500 },
-      { minInvites: 15, name: "Líder",        boostBonus: 1.6, maxEnergy: 180, rankCoinsBonus: 800 },
-      { minInvites: 25, name: "Profesional",  boostBonus: 2.2, maxEnergy: 210, rankCoinsBonus: 1500 },
-      { minInvites: 40, name: "Dueño",        boostBonus: 3.0, maxEnergy: 250, rankCoinsBonus: 3000 }
+      { minInvites: 0,   name: "Novato",         boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0 },
+      { minInvites: 3,   name: "Empleado",       boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100 },
+      { minInvites: 8,   name: "Gerente 1",      boostBonus: 0.5, energyBonus: 120,  rankCoinsBonus: 250 },
+      { minInvites: 15,  name: "Gerente 2",      boostBonus: 0.8, energyBonus: 200,  rankCoinsBonus: 500 },
+      { minInvites: 25,  name: "Jefe",           boostBonus: 1.2, energyBonus: 300,  rankCoinsBonus: 900 },
+      { minInvites: 40,  name: "Líder",          boostBonus: 1.6, energyBonus: 450,  rankCoinsBonus: 1500 },
+      { minInvites: 65,  name: "Profesional",    boostBonus: 2.2, energyBonus: 650,  rankCoinsBonus: 2500 },
+      { minInvites: 100, name: "Líder Supremo",  boostBonus: 3.5, energyBonus: 1000, rankCoinsBonus: 5000 }
     ];
 
     const BASE_WEEKLY_TOP = [
-      { name: "CryptoMaster", invites: 19 },
-      { name: "TonHunter", invites: 15 },
-      { name: "TrxKing", invites: 12 },
-      { name: "NodeRunner", invites: 9 },
-      { name: "TapLegend", invites: 8 },
-      { name: "AlphaMiner", invites: 6 },
-      { name: "GemSeeker", invites: 5 },
-      { name: "BlockScout", invites: 4 },
+      { name: "CryptoMaster", invites: 28 },
+      { name: "TonHunter", invites: 22 },
+      { name: "TrxKing", invites: 17 },
+      { name: "NodeRunner", invites: 13 },
+      { name: "TapLegend", invites: 10 },
+      { name: "AlphaMiner", invites: 8 },
+      { name: "GemSeeker", invites: 6 },
+      { name: "BlockScout", invites: 5 },
       { name: "CoinWave", invites: 3 },
       { name: "BitStarter", invites: 2 }
     ];
@@ -627,6 +714,7 @@
 
     const MAX_BOOST_PURCHASES = 2;
     const MAX_ACCUM_SECONDS = 6 * 3600;
+    const ENERGY_REGEN_PER_SEC = 3;
     const STORAGE_KEY = "tg_mini_game_state_v1";
 
     const RIGS_CATALOG = [
@@ -645,7 +733,6 @@
     const startParam = tg?.initDataUnsafe?.start_param || null;
     const playerId = tgUser?.id ? String(tgUser.id) : "demo_user_1001";
 
-    // Identificador de semana anclado al último domingo a las 00:00 (12:00 a. m.)
     function getCurrentSundayMidnightKey(nowMs = Date.now()) {
       const d = new Date(nowMs);
       const sundayMidnight = new Date(d);
@@ -694,6 +781,7 @@
       weeklyReferralCount: 0,
       weekAnchorKey: getCurrentSundayMidnightKey(),
       awardedRankMinInvites: 0,
+      customAvatar: null,
       payoutNetwork: "USDT-TON",
       payoutAddress: ""
     };
@@ -723,6 +811,26 @@
       state.purchasedBoostMult = state.productivityMultiplier || 1.0;
     }
 
+    function getPlayerLevel() {
+      const totalRigs =
+        (state.rigs.rig_1 || 0) +
+        (state.rigs.rig_2 || 0) +
+        (state.rigs.rig_3 || 0);
+      return Math.max(1, state.tapLevel + totalRigs);
+    }
+
+    // Energía base según nivel:
+    // Nivel 50 -> 1,000 de energía | Nivel 100 -> 2,000 de energía | luego +20 por nivel
+    function getLevelBaseEnergy(level) {
+      if (level >= 100) {
+        return 2000 + (level - 100) * 20;
+      }
+      if (level >= 50) {
+        return 1000 + Math.floor(((level - 50) / 50) * 1000);
+      }
+      return 100 + Math.floor(((level - 1) / 49) * 900);
+    }
+
     function checkWeeklyReset() {
       const currentWeekKey = getCurrentSundayMidnightKey();
       if (state.weekAnchorKey !== currentWeekKey) {
@@ -744,8 +852,13 @@
     function syncRankAndBoostBenefits() {
       checkWeeklyReset();
       const rank = getCurrentReferralRank();
-      state.maxEnergy = rank.maxEnergy;
-      if (state.energy > state.maxEnergy) {
+      const level = getPlayerLevel();
+      const prevMax = state.maxEnergy || 100;
+      state.maxEnergy = getLevelBaseEnergy(level) + rank.energyBonus;
+
+      if (state.maxEnergy > prevMax) {
+        state.energy = Math.min(state.maxEnergy, state.energy + (state.maxEnergy - prevMax));
+      } else if (state.energy > state.maxEnergy) {
         state.energy = state.maxEnergy;
       }
 
@@ -763,7 +876,25 @@
       );
     }
 
+    function updatePassiveEnergy() {
+      const now = Date.now();
+      const elapsedSec = Math.max(0, (now - (state.lastTick || now)) / 1000);
+      if (elapsedSec >= 1) {
+        if (state.energy < state.maxEnergy) {
+          const regen = Math.floor(elapsedSec * ENERGY_REGEN_PER_SEC);
+          if (regen > 0) {
+            state.energy = Math.min(state.maxEnergy, state.energy + regen);
+            state.lastTick = now;
+          }
+        } else {
+          state.lastTick = now;
+        }
+      }
+    }
+
     syncRankAndBoostBenefits();
+    updatePassiveEnergy();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -783,14 +914,6 @@
       try {
         tg?.HapticFeedback?.impactOccurred(type);
       } catch {}
-    }
-
-    function getPlayerLevel() {
-      const totalRigs =
-        (state.rigs.rig_1 || 0) +
-        (state.rigs.rig_2 || 0) +
-        (state.rigs.rig_3 || 0);
-      return Math.max(1, state.tapLevel + totalRigs);
     }
 
     function isBoostRequiredBeforeNextLevel() {
@@ -834,18 +957,53 @@
       return Math.floor(elapsedSec * perSecond);
     }
 
-    function updatePassiveEnergy() {
-      const now = Date.now();
-      const elapsedSec = Math.max(0, (now - state.lastTick) / 1000);
-      if (elapsedSec >= 1 && state.energy < state.maxEnergy) {
-        const regen = Math.floor(elapsedSec * 2);
-        if (regen > 0) {
-          state.energy = Math.min(state.maxEnergy, state.energy + regen);
-          state.lastTick = now;
-        }
-      } else if (elapsedSec >= 1) {
-        state.lastTick = now;
+    function renderAvatar(fullName) {
+      const imgEl = document.getElementById("avatar-img");
+      const fallbackEl = document.getElementById("avatar-fallback");
+      const photoUrl = state.customAvatar || tgUser?.photo_url || "";
+
+      const initials = (fullName || "CG")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0].toUpperCase())
+        .join("") || "CG";
+
+      fallbackEl.textContent = initials;
+
+      if (photoUrl) {
+        imgEl.src = photoUrl;
+        imgEl.style.display = "block";
+        fallbackEl.style.display = "none";
+        imgEl.onerror = () => {
+          imgEl.style.display = "none";
+          fallbackEl.style.display = "flex";
+        };
+      } else {
+        imgEl.style.display = "none";
+        fallbackEl.style.display = "flex";
       }
+    }
+
+    function spawnFloatingGain(amount) {
+      const stage = document.getElementById("tap-stage");
+      const btn = document.getElementById("tap-btn");
+      const el = document.createElement("div");
+      el.className = "float-gain";
+      el.textContent = `+${amount.toLocaleString()}`;
+
+      const offsetX = Math.floor(Math.random() * 70) - 35;
+      el.style.left = `calc(50% + ${offsetX}px)`;
+      el.style.top = "28px";
+      stage.appendChild(el);
+
+      btn.classList.remove("tap-pulse");
+      void btn.offsetWidth;
+      btn.classList.add("tap-pulse");
+
+      setTimeout(() => {
+        el.remove();
+      }, 720);
     }
 
     function renderRigs() {
@@ -919,7 +1077,7 @@
       }
 
       document.getElementById("current-rank-summary").innerHTML =
-        `Rango actual: <strong>${rank.name}</strong> (${count} invitados) · Bonus rango: <strong>+${rank.boostBonus.toFixed(1)}x</strong> · Energía máx.: <strong>${rank.maxEnergy}</strong>`;
+        `Rango actual: <strong>${rank.name}</strong> (${count} invitados) · Bonus rango: <strong>+${rank.boostBonus.toFixed(1)}x</strong> · Energía rango: <strong>+${rank.energyBonus}</strong>`;
 
       const ranksListEl = document.getElementById("ranks-list");
       ranksListEl.innerHTML = "";
@@ -929,7 +1087,7 @@
         div.className = `tier-item ${isActive ? "active-tier" : ""}`;
         div.innerHTML =
           `<div class="row-between"><strong>${r.name}</strong><span class="user-sub">${r.minInvites}+ invitados</span></div>` +
-          `<div class="user-sub" style="margin-top:3px;">+${r.boostBonus.toFixed(1)}x boost · ${r.maxEnergy} energía máx. · +${r.rankCoinsBonus} monedas al subir</div>`;
+          `<div class="user-sub" style="margin-top:3px;">+${r.boostBonus.toFixed(1)}x boost · +${r.energyBonus} energía · +${r.rankCoinsBonus} monedas al subir</div>`;
         ranksListEl.appendChild(div);
       });
 
@@ -1026,6 +1184,8 @@
       document.getElementById("user-name").textContent =
         tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
 
+      renderAvatar(fullName);
+
       document.getElementById("ref-info").textContent =
         `Rango: ${rank.name} · Código: ${state.referralCode}`;
 
@@ -1037,8 +1197,8 @@
       document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
 
       document.getElementById("tap-power").textContent = getTapGain();
-      document.getElementById("energy-text").textContent = `${state.energy} / ${state.maxEnergy}`;
-      document.getElementById("energy-bar").style.width = `${(state.energy / state.maxEnergy) * 100}%`;
+      document.getElementById("energy-text").textContent = `${state.energy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
+      document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
 
       const tapCost = getTapUpgradeCost();
       const boostGateActive = isBoostRequiredBeforeNextLevel();
@@ -1059,14 +1219,39 @@
     document.getElementById("payout-network").value = state.payoutNetwork || "USDT-TON";
     document.getElementById("payout-address-input").value = state.payoutAddress || "";
 
+    // Foto de perfil personalizada
+    document.getElementById("btn-change-avatar").addEventListener("click", () => {
+      document.getElementById("avatar-file-input").click();
+    });
+
+    document.getElementById("avatar-file-input").addEventListener("change", (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast("Elige una imagen de máximo 1.5 MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.customAvatar = String(reader.result || "");
+        saveState();
+        render();
+        showToast("Foto de perfil actualizada");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Toque en el juego con animación
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
       if (state.energy <= 0) {
         showToast("Sin energía. Espera a que recargue.");
         return;
       }
+      const gain = getTapGain();
       state.energy -= 1;
-      state.coins += getTapGain();
+      state.coins += gain;
+      spawnFloatingGain(gain);
       haptic("light");
       saveState();
       render();
@@ -1103,7 +1288,7 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Referidos (cadena infinita, rangos y top 10 semanal) =====
+    // ===== Referidos =====
     let lastReferralLogText = "";
 
     function openTelegramLink(url) {
