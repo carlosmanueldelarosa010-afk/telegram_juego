@@ -51,14 +51,27 @@
     .user-info { font-size: 14px; font-weight: 600; }
     .user-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
+    .header-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
     .badge {
       background: rgba(59, 130, 246, 0.16);
       color: #93c5fd;
       border: 1px solid rgba(59, 130, 246, 0.35);
-      padding: 6px 10px;
+      padding: 5px 10px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
+    }
+
+    .badge-lvl {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.35);
     }
 
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -139,6 +152,32 @@
       margin-bottom: 12px;
     }
 
+    .lock-box {
+      font-size: 12px;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .req-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .req-ok { color: #6ee7b7; font-weight: 700; }
+    .req-no { color: #fca5a5; font-weight: 700; }
+
     .ref-box {
       background: var(--card-2);
       border: 1px dashed rgba(148, 163, 184, 0.35);
@@ -162,8 +201,8 @@
       backdrop-filter: blur(10px);
       border-top: 1px solid var(--border);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      padding: 8px 6px;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 8px 4px;
       z-index: 20;
     }
 
@@ -171,9 +210,9 @@
       background: transparent;
       border: none;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
-      padding: 6px 4px;
+      padding: 6px 2px;
       border-radius: 10px;
       cursor: pointer;
     }
@@ -208,7 +247,10 @@
         <div id="user-name" class="user-info">Jugador</div>
         <div id="ref-info" class="user-sub">Sin referido inicial</div>
       </div>
-      <div id="boost-badge" class="badge">Boost: x1.0</div>
+      <div class="header-badges">
+        <div id="player-level-badge" class="badge badge-lvl">Nivel 1</div>
+        <div id="boost-badge" class="badge">Boost: x1.0</div>
+      </div>
     </div>
 
     <div class="stats-grid">
@@ -239,13 +281,19 @@
 
       <div class="card">
         <div class="card-title">Mejora de toque</div>
-        <div class="card-desc">Aumenta las monedas base obtenidas por cada toque.</div>
+        <div class="card-desc">Aumenta las monedas base por toque y suma nivel. Cada nivel requiere más monedas.</div>
         <div class="row-between">
           <div>
-            <div>Nivel actual: <strong id="tap-lvl">1</strong></div>
+            <div>Nivel de toque: <strong id="tap-lvl">1</strong></div>
             <div class="user-sub">Costo: <span id="tap-cost">50</span> monedas</div>
           </div>
           <button id="btn-upgrade-tap" class="btn">Mejorar</button>
+        </div>
+        <div id="lvl12-boost-gate" class="lock-box" style="display:none; margin-top:12px; margin-bottom:0;">
+          <div>🔒 Para subir al <strong>Nivel 12</strong> debes activar al menos <strong>1 Boost</strong> primero.</div>
+          <button id="btn-go-boost-gate" class="btn btn-warn" style="width:100%; margin-top:8px;">
+            Ir a Boost Cripto
+          </button>
         </div>
       </div>
     </section>
@@ -348,13 +396,79 @@
         </div>
       </div>
     </section>
+
+    <!-- PESTAÑA 5: CANJEAR MONEDAS -->
+    <section id="tab-redeem" class="tab-content">
+      <div class="card">
+        <div class="card-title">Requisitos obligatorios para canjear</div>
+        <div class="card-desc">
+          Para desbloquear el canje de tus monedas acumuladas debes cumplir ambos pasos:
+        </div>
+
+        <div class="req-item">
+          <span>1. Nivel mínimo requerido: <strong>Nivel 12</strong> (Actual: <span id="req-lvl-current">1</span>)</span>
+          <span id="req-lvl-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div class="req-item">
+          <span>2. Dirección de criptomonedas registrada</span>
+          <span id="req-wallet-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div id="redeem-lock-notice" class="lock-box"></div>
+
+        <label class="user-sub">Red de tu billetera para recibir la recompensa</label>
+        <select id="payout-network">
+          <option value="USDT-TON">USDT (Red TON)</option>
+          <option value="USDT-TRC20">USDT (Red TRC20)</option>
+        </select>
+
+        <label class="user-sub">Tu dirección de criptomonedas (obligatoria)</label>
+        <input id="payout-address-input" type="text" placeholder="Pega aquí tu dirección TON o TRC20" autocomplete="off" />
+        <button id="btn-save-wallet" class="btn btn-outline" style="width:100%; margin-bottom:10px;">
+          Guardar dirección de retiro
+        </button>
+      </div>
+
+      <div id="redeem-action-card" class="card" style="display:none;">
+        <div class="card-title">Opciones de canje de monedas</div>
+        <div class="card-desc">
+          Selecciona uno de los paquetes disponibles para canjear tus monedas acumuladas.
+        </div>
+
+        <label class="user-sub">Elige paquete de canje</label>
+        <select id="redeem-tier-select">
+          <option value="10000" data-reward="5">10,000 monedas — $5</option>
+          <option value="25000" data-reward="10">25,000 monedas — $10</option>
+          <option value="40000" data-reward="15">40,000 monedas — $15</option>
+          <option value="80000" data-reward="25">80,000 monedas — $25</option>
+        </select>
+
+        <div id="selected-tier-info" class="user-sub" style="margin-bottom:10px;"></div>
+
+        <button id="btn-submit-coin-redeem" class="btn btn-green" style="width:100%;">
+          Solicitar canje
+        </button>
+
+        <div id="coin-redeem-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="coin-redeem-details">-</div>
+          <button id="btn-copy-redeem-request" class="btn btn-warn" style="width:100%; margin-top:10px;">
+            Copiar solicitud de canje
+          </button>
+          <button id="btn-send-redeem-tg" class="btn" style="width:100%; margin-top:8px;">
+            Enviar solicitud en Telegram
+          </button>
+        </div>
+      </div>
+    </section>
   </div>
 
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="tab-game">Juego</button>
     <button class="nav-btn" data-tab="tab-rigs">Rigs</button>
-    <button class="nav-btn" data-tab="tab-crypto">Boost Cripto</button>
+    <button class="nav-btn" data-tab="tab-crypto">Boost</button>
     <button class="nav-btn" data-tab="tab-friends">Amigos</button>
+    <button class="nav-btn" data-tab="tab-redeem">Canjear</button>
   </nav>
 
   <script>
@@ -365,7 +479,6 @@
       "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
     };
 
-    // Códigos que entregas manualmente tras verificar la captura de pago
     const ACTIVATION_CODES = {
       "BOOST15": 1.5,
       "BOOST20": 2.0,
@@ -376,6 +489,9 @@
       "BOOST100": 10.0,
       "BOOST150": 15.0
     };
+
+    const MIN_REDEEM_LEVEL = 12;
+    const REQUIRED_LEVEL_FOR_BOOST = 12;
 
     const MAX_BOOST_PURCHASES = 2;
     const MAX_ACCUM_SECONDS = 6 * 3600;
@@ -407,7 +523,9 @@
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
       lastTick: Date.now(),
       lastClaim: Date.now(),
-      referredBy: null
+      referredBy: null,
+      payoutNetwork: "USDT-TON",
+      payoutAddress: ""
     };
 
     function loadState() {
@@ -453,8 +571,32 @@
       } catch {}
     }
 
+    function getPlayerLevel() {
+      const totalRigs =
+        (state.rigs.rig_1 || 0) +
+        (state.rigs.rig_2 || 0) +
+        (state.rigs.rig_3 || 0);
+      return Math.max(1, state.tapLevel + totalRigs);
+    }
+
+    // Bloquea subir de nivel si el siguiente nivel alcanzaría el Nivel 12 sin tener boost
+    function isBoostRequiredBeforeNextLevel() {
+      const nextLevel = getPlayerLevel() + 1;
+      return nextLevel >= REQUIRED_LEVEL_FOR_BOOST && state.boostCount <= 0;
+    }
+
+    function hasValidWallet() {
+      const addr = (state.payoutAddress || "").trim();
+      return addr.length >= 16;
+    }
+
+    function canAccessRedeem() {
+      return getPlayerLevel() >= MIN_REDEEM_LEVEL && hasValidWallet();
+    }
+
+    // Crecimiento progresivo más exigente conforme sube el nivel de toque
     function getTapUpgradeCost() {
-      return Math.floor(50 * Math.pow(1.6, state.tapLevel - 1));
+      return Math.floor(50 * Math.pow(1.95, state.tapLevel - 1));
     }
 
     function getTapGain() {
@@ -531,6 +673,64 @@
       });
     }
 
+    function updateSelectedTierInfo() {
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value || 10000);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward") || 5);
+      const infoEl = document.getElementById("selected-tier-info");
+      const btnEl = document.getElementById("btn-submit-coin-redeem");
+
+      const enough = state.coins >= reqCoins;
+      infoEl.textContent = enough
+        ? `Listo para canjear ${reqCoins.toLocaleString()} monedas por $${rewardUsd} USDT.`
+        : `Te faltan ${(reqCoins - state.coins).toLocaleString()} monedas para canjear $${rewardUsd} USDT.`;
+      infoEl.style.color = enough ? "#6ee7b7" : "#fca5a5";
+      btnEl.disabled = !enough;
+    }
+
+    function renderRedeemSection() {
+      const level = getPlayerLevel();
+      const levelOk = level >= MIN_REDEEM_LEVEL;
+      const walletOk = hasValidWallet();
+      const unlocked = levelOk && walletOk;
+
+      document.getElementById("req-lvl-current").textContent = level;
+      const lvlStatusEl = document.getElementById("req-lvl-status");
+      lvlStatusEl.textContent = levelOk ? "Cumplido" : `Faltan ${MIN_REDEEM_LEVEL - level}`;
+      lvlStatusEl.className = levelOk ? "req-ok" : "req-no";
+
+      const walletStatusEl = document.getElementById("req-wallet-status");
+      walletStatusEl.textContent = walletOk ? "Registrada" : "Obligatoria";
+      walletStatusEl.className = walletOk ? "req-ok" : "req-no";
+
+      const lockNoticeEl = document.getElementById("redeem-lock-notice");
+      const actionCardEl = document.getElementById("redeem-action-card");
+
+      if (!unlocked) {
+        actionCardEl.style.display = "none";
+        lockNoticeEl.style.display = "block";
+        const missing = [];
+        if (!levelOk) missing.push(`alcanzar el Nivel ${MIN_REDEEM_LEVEL} (tienes Nivel ${level})`);
+        if (!walletOk) missing.push("ingresar y guardar tu dirección de criptomonedas");
+        lockNoticeEl.innerHTML = `🔒 <strong>Apartado bloqueado:</strong> Debes ${missing.join(" y ")} para habilitar el canje.`;
+      } else {
+        lockNoticeEl.style.display = "none";
+        actionCardEl.style.display = "block";
+        updateSelectedTierInfo();
+      }
+    }
+
+    function switchTab(targetId) {
+      document.querySelectorAll(".nav-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-tab") === targetId);
+      });
+      document.querySelectorAll(".tab-content").forEach((t) => {
+        t.classList.toggle("active", t.id === targetId);
+      });
+      render();
+    }
+
     function render() {
       updatePassiveEnergy();
 
@@ -544,6 +744,8 @@
         ? `Referido por ID: ${state.referredBy}`
         : "Sin referido inicial";
 
+      const playerLevel = getPlayerLevel();
+      document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
       document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
       document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} / ${MAX_BOOST_PURCHASES}`;
       document.getElementById("coins-val").textContent = state.coins.toLocaleString();
@@ -554,9 +756,11 @@
       document.getElementById("energy-bar").style.width = `${(state.energy / state.maxEnergy) * 100}%`;
 
       const tapCost = getTapUpgradeCost();
+      const boostGateActive = isBoostRequiredBeforeNextLevel();
       document.getElementById("tap-lvl").textContent = state.tapLevel;
-      document.getElementById("tap-cost").textContent = tapCost;
-      document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost;
+      document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
+      document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
+      document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
 
       const pending = getPendingCoins();
       document.getElementById("pending-coins").textContent = pending.toLocaleString();
@@ -566,9 +770,12 @@
       document.getElementById("invite-link-box").textContent = inviteUrl;
 
       renderRigs();
+      renderRedeemSection();
     }
 
-    // Eventos del juego
+    document.getElementById("payout-network").value = state.payoutNetwork || "USDT-TON";
+    document.getElementById("payout-address-input").value = state.payoutAddress || "";
+
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
       if (state.energy <= 0) {
@@ -583,6 +790,11 @@
     });
 
     document.getElementById("btn-upgrade-tap").addEventListener("click", () => {
+      if (isBoostRequiredBeforeNextLevel()) {
+        showToast("Debes activar un boost antes de llegar al Nivel 12");
+        render();
+        return;
+      }
       const cost = getTapUpgradeCost();
       if (state.coins < cost) return;
       state.coins -= cost;
@@ -591,6 +803,10 @@
       saveState();
       render();
       showToast(`Toque subido a nivel ${state.tapLevel}`);
+    });
+
+    document.getElementById("btn-go-boost-gate").addEventListener("click", () => {
+      switchTab("tab-crypto");
     });
 
     document.getElementById("btn-claim").addEventListener("click", () => {
@@ -604,7 +820,7 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Boost Cripto (generación de orden y canje manual) =====
+    // ===== Boost Cripto =====
     let lastOrderSummary = "";
 
     function openTelegramLink(url) {
@@ -688,6 +904,78 @@
       showToast(`¡Boost activado! Multiplicador actual: x${state.productivityMultiplier.toFixed(1)}`);
     });
 
+    // ===== Canjear monedas =====
+    let lastRedeemRequestText = "";
+
+    document.getElementById("btn-save-wallet").addEventListener("click", () => {
+      const net = document.getElementById("payout-network").value;
+      const addr = (document.getElementById("payout-address-input").value || "").trim();
+
+      if (addr.length < 16) {
+        showToast("Ingresa una dirección de criptomonedas válida");
+        return;
+      }
+
+      state.payoutNetwork = net;
+      state.payoutAddress = addr;
+      saveState();
+      render();
+      haptic("medium");
+      showToast("Dirección de recompensa guardada");
+    });
+
+    document.getElementById("redeem-tier-select").addEventListener("change", updateSelectedTierInfo);
+
+    document.getElementById("btn-submit-coin-redeem").addEventListener("click", () => {
+      if (!canAccessRedeem()) {
+        showToast("Cumple Nivel 12 y registra tu dirección primero");
+        render();
+        return;
+      }
+
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward"));
+
+      if (state.coins < reqCoins) {
+        showToast(`Necesitas ${reqCoins.toLocaleString()} monedas para este canje`);
+        return;
+      }
+
+      const redeemCode = `CNJ-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+      state.coins -= reqCoins;
+      saveState();
+      render();
+      haptic("heavy");
+
+      lastRedeemRequestText =
+        `Canje: ${redeemCode} | Usuario ID: ${playerId} | Nivel: ${getPlayerLevel()} | Monedas: ${reqCoins} | Recompensa: $${rewardUsd} USDT | Red: ${state.payoutNetwork} | Dirección: ${state.payoutAddress}`;
+
+      document.getElementById("coin-redeem-details").innerHTML =
+        `<div><strong>Solicitud registrada:</strong> ${redeemCode}</div>` +
+        `<div style="margin-top:4px;">Paquete canjeado: <strong>${reqCoins.toLocaleString()} monedas</strong> por <strong>$${rewardUsd}</strong></div>` +
+        `<div style="margin-top:4px;">Red y dirección: <strong>${state.payoutNetwork}</strong> · <strong>${state.payoutAddress}</strong></div>` +
+        `<div style="margin-top:6px; color:#fcd34d;">Envía esta solicitud en Telegram para recibir tu recompensa.</div>`;
+      document.getElementById("coin-redeem-box").style.display = "block";
+      showToast("Solicitud de canje generada");
+    });
+
+    document.getElementById("btn-copy-redeem-request").addEventListener("click", () => {
+      if (!lastRedeemRequestText) return;
+      copyText(lastRedeemRequestText, "Solicitud de canje copiada");
+    });
+
+    document.getElementById("btn-send-redeem-tg").addEventListener("click", async () => {
+      if (lastRedeemRequestText) {
+        try {
+          await navigator.clipboard.writeText(lastRedeemRequestText);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo Telegram... pega tu solicitud de canje");
+    });
+
     async function copyText(text, okMsg) {
       try {
         await navigator.clipboard.writeText(text);
@@ -729,12 +1017,7 @@
     // Navegación por pestañas
     document.querySelectorAll(".nav-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelectorAll(".tab-content").forEach((t) => t.classList.remove("active"));
-        btn.classList.add("active");
-        const targetId = btn.getAttribute("data-tab");
-        document.getElementById(targetId).classList.add("active");
-        render();
+        switchTab(btn.getAttribute("data-tab"));
       });
     });
 
