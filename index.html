@@ -1165,4 +1165,539 @@
         { name: `${meLabel} (Tú)`, invites: weeklyCount, isMe: true }
       ]
         .sort((a, b) => b.invites - a.invites)
-        .slice(
+        .slice(0, 10);
+
+      const lbEl = document.getElementById("weekly-leaderboard-list");
+      lbEl.innerHTML = "";
+      combinedTop.forEach((entry, idx) => {
+        const row = document.createElement("div");
+        row.className = `rank-row ${entry.isMe ? "me" : ""}`;
+        row.innerHTML =
+          `<span><strong>#${idx + 1}</strong> ${entry.name}</span>` +
+          `<strong>${entry.invites} inv.</strong>`;
+        lbEl.appendChild(row);
+      });
+    }
+
+    function updateSelectedTierInfo() {
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value || 10000);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward") || 5);
+      const infoEl = document.getElementById("selected-tier-info");
+      const btnEl = document.getElementById("btn-submit-coin-redeem");
+
+      const enough = state.coins >= reqCoins;
+      infoEl.textContent = enough
+        ? `Listo para canjear ${reqCoins.toLocaleString()} monedas por $${rewardUsd} USDT.`
+        : `Te faltan ${(reqCoins - state.coins).toLocaleString()} monedas para canjear $${rewardUsd} USDT.`;
+      infoEl.style.color = enough ? "#6ee7b7" : "#fca5a5";
+      btnEl.disabled = !enough;
+    }
+
+    function renderRedeemSection() {
+      const level = getPlayerLevel();
+      const levelOk = level >= MIN_REDEEM_LEVEL;
+      const walletOk = hasValidWallet();
+      const unlocked = levelOk && walletOk;
+
+      document.getElementById("req-lvl-current").textContent = level;
+      const lvlStatusEl = document.getElementById("req-lvl-status");
+      lvlStatusEl.textContent = levelOk ? "Cumplido" : `Faltan ${MIN_REDEEM_LEVEL - level}`;
+      lvlStatusEl.className = levelOk ? "req-ok" : "req-no";
+
+      const walletStatusEl = document.getElementById("req-wallet-status");
+      walletStatusEl.textContent = walletOk ? "Registrada" : "Obligatoria";
+      walletStatusEl.className = walletOk ? "req-ok" : "req-no";
+
+      const lockNoticeEl = document.getElementById("redeem-lock-notice");
+      const actionCardEl = document.getElementById("redeem-action-card");
+
+      if (!unlocked) {
+        actionCardEl.style.display = "none";
+        lockNoticeEl.style.display = "block";
+        const missing = [];
+        if (!levelOk) missing.push(`alcanzar el Nivel ${MIN_REDEEM_LEVEL} (tienes Nivel ${level})`);
+        if (!walletOk) missing.push("ingresar y guardar tu dirección de criptomonedas");
+        lockNoticeEl.innerHTML = `🔒 <strong>Apartado bloqueado:</strong> Debes ${missing.join(" y ")} para habilitar el canje.`;
+      } else {
+        lockNoticeEl.style.display = "none";
+        actionCardEl.style.display = "block";
+        updateSelectedTierInfo();
+      }
+    }
+
+    function renderWithdrawSection() {
+      const bal = Number(state.realBalanceUsdt) || 0;
+      const walletOk = hasValidWallet();
+      document.getElementById("withdraw-available-val").textContent = `$${bal.toFixed(2)}`;
+      document.getElementById("withdraw-net-val").textContent = state.payoutNetwork || "USDT-TON";
+      document.getElementById("withdraw-wallet-display").textContent = walletOk
+        ? state.payoutAddress.trim()
+        : "Sin billetera registrada";
+      document.getElementById("withdraw-wallet-lock").style.display = walletOk ? "none" : "block";
+    }
+
+    function switchTab(targetId) {
+      document.querySelectorAll(".nav-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-tab") === targetId);
+      });
+      document.querySelectorAll(".tab-content").forEach((t) => {
+        t.classList.toggle("active", t.id === targetId);
+      });
+      render();
+    }
+
+    function render() {
+      updatePassiveEnergy();
+      syncRankAndBoostBenefits();
+      const rank = getCurrentReferralRank();
+
+      const fullName = tgUser
+        ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
+        : "Jugador";
+      document.getElementById("user-name").textContent =
+        tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
+
+      renderAvatar(fullName);
+
+      document.getElementById("ref-info").textContent =
+        `Rango: ${rank.name} · Código: ${state.referralCode}`;
+
+      const realBal = Number(state.realBalanceUsdt) || 0;
+      const playerLevel = getPlayerLevel();
+      document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
+      document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
+      document.getElementById("boost-count").textContent = `Boosts comprados: ${state.boostCount} / ${MAX_BOOST_PURCHASES}`;
+      document.getElementById("boost-real-balance-info").textContent = `Saldo real disponible: $${realBal.toFixed(2)} USDT`;
+      document.getElementById("coins-val").textContent = state.coins.toLocaleString();
+      document.getElementById("real-balance-val").textContent = `$${realBal.toFixed(2)}`;
+      document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
+
+      document.getElementById("tap-power").textContent = getTapGain();
+      document.getElementById("energy-text").textContent = `${state.energy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
+      document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
+
+      const tapCost = getTapUpgradeCost();
+      const boostGateActive = isBoostRequiredBeforeNextLevel();
+      document.getElementById("tap-lvl").textContent = state.tapLevel;
+      document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
+      document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
+      document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
+
+      const pending = getPendingCoins();
+      document.getElementById("pending-coins").textContent = pending.toLocaleString();
+      document.getElementById("btn-claim").disabled = pending <= 0;
+
+      renderRigs();
+      renderReferralsSection();
+      renderRedeemSection();
+      renderWithdrawSection();
+    }
+
+    document.getElementById("payout-network").value = state.payoutNetwork || "USDT-TON";
+    document.getElementById("payout-address-input").value = state.payoutAddress || "";
+    document.getElementById("withdraw-address-quick-input").value = state.payoutAddress || "";
+
+    document.getElementById("real-balance-card").addEventListener("click", () => {
+      switchTab("tab-withdraw");
+    });
+
+    document.getElementById("btn-change-avatar").addEventListener("click", () => {
+      document.getElementById("avatar-file-input").click();
+    });
+
+    document.getElementById("avatar-file-input").addEventListener("change", (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast("Elige una imagen de máximo 1.5 MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.customAvatar = String(reader.result || "");
+        saveState();
+        render();
+        showToast("Foto de perfil actualizada");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("tap-btn").addEventListener("click", () => {
+      updatePassiveEnergy();
+      if (state.energy <= 0) {
+        showToast("Sin energía. Espera a que recargue.");
+        return;
+      }
+      const gain = getTapGain();
+      state.energy -= 1;
+      state.coins += gain;
+      spawnFloatingGain(gain);
+      haptic("light");
+      saveState();
+      render();
+    });
+
+    document.getElementById("btn-upgrade-tap").addEventListener("click", () => {
+      if (isBoostRequiredBeforeNextLevel()) {
+        showToast("Debes activar un boost antes de llegar al Nivel 12");
+        render();
+        return;
+      }
+      const cost = getTapUpgradeCost();
+      if (state.coins < cost) return;
+      state.coins -= cost;
+      state.tapLevel += 1;
+      haptic("medium");
+      saveState();
+      render();
+      showToast(`Toque subido a nivel ${state.tapLevel}`);
+    });
+
+    document.getElementById("btn-go-boost-gate").addEventListener("click", () => {
+      switchTab("tab-crypto");
+    });
+
+    document.getElementById("btn-claim").addEventListener("click", () => {
+      const pending = getPendingCoins();
+      if (pending <= 0) return;
+      state.coins += pending;
+      state.lastClaim = Date.now();
+      haptic("heavy");
+      saveState();
+      render();
+      showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
+    });
+
+    // ===== Referidos =====
+    let lastReferralLogText = "";
+
+    function openTelegramLink(url) {
+      if (tg?.openTelegramLink && url.startsWith("https://t.me/")) {
+        tg.openTelegramLink(url);
+      } else if (tg?.openLink) {
+        tg.openLink(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    }
+
+    function applyReferralCode(rawCode, fromStartParam = false) {
+      checkWeeklyReset();
+      const code = (rawCode || "").trim().toUpperCase();
+      if (!code) {
+        if (!fromStartParam) showToast("Escribe un código de invitación");
+        return;
+      }
+
+      if (state.redeemedReferralCode) {
+        if (!fromStartParam) showToast("Solo puedes canjear 1 código de invitación por usuario");
+        return;
+      }
+
+      if (code === state.referralCode) {
+        if (!fromStartParam) showToast("No puedes canjear tu propio código");
+        return;
+      }
+
+      state.redeemedReferralCode = code;
+      state.referredBy = code;
+      state.coins += REFERRAL_REWARDS.inviteeCoins;
+      syncRankAndBoostBenefits();
+      saveState();
+      render();
+      haptic("heavy");
+
+      const chainTrail = [code, state.referralCode].join(" -> ");
+      lastReferralLogText =
+        `Cadena Infinita Referido | Usuario: ${playerId} | Cadena: ${chainTrail} | ` +
+        `Nuevo Invitado: +${REFERRAL_REWARDS.inviteeCoins} | Invitador Directo: +${REFERRAL_REWARDS.inviterCoins} | ` +
+        `Eslabones Superiores: +${REFERRAL_REWARDS.chainStepCoins} c/u`;
+
+      document.getElementById("referral-chain-details").innerHTML =
+        `<div><strong>¡Código aplicado!</strong> Recibiste <strong>+${REFERRAL_REWARDS.inviteeCoins} monedas</strong>.</div>` +
+        `<div style="margin-top:4px;">Cadena registrada: <strong>${chainTrail}</strong> (sin límite de niveles)</div>` +
+        `<div style="margin-top:4px;">Reparto previsto: <strong>+${REFERRAL_REWARDS.inviterCoins}</strong> invitador directo · <strong>+${REFERRAL_REWARDS.inviteeCoins}</strong> tú · <strong>+${REFERRAL_REWARDS.chainStepCoins}</strong> por cada nivel superior en la cadena.</div>`;
+      document.getElementById("referral-chain-box").style.display = "block";
+      showToast(`¡Código canjeado! +${REFERRAL_REWARDS.inviteeCoins} monedas`);
+    }
+
+    document.getElementById("btn-copy-ref-code").addEventListener("click", () => {
+      copyText(state.referralCode, "Código de referido copiado");
+    });
+
+    document.getElementById("btn-share-ref-tg").addEventListener("click", () => {
+      const inviteUrl = encodeURIComponent(
+        `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`
+      );
+      const text = encodeURIComponent(
+        `¡Únete a Cripto Game con mi código ${state.referralCode} y gana +100 monedas!`
+      );
+      openTelegramLink(`https://t.me/share/url?url=${inviteUrl}&text=${text}`);
+    });
+
+    document.getElementById("btn-register-code-tg").addEventListener("click", async () => {
+      const regText =
+        `Registro de Código Único | Usuario ID: ${playerId} | Nombre: ${tgUser?.first_name || "Jugador"} | Código: ${state.referralCode}`;
+      try {
+        await navigator.clipboard.writeText(regText);
+      } catch {}
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo soporte... pega tu código para registrarlo sin repetir");
+    });
+
+    document.getElementById("btn-apply-referral-code").addEventListener("click", () => {
+      applyReferralCode(document.getElementById("input-referral-code").value, false);
+    });
+
+    document.getElementById("btn-send-ref-log-tg").addEventListener("click", async () => {
+      if (lastReferralLogText) {
+        try {
+          await navigator.clipboard.writeText(lastReferralLogText);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo soporte... pega el reporte de cadena");
+    });
+
+    if (startParam && !state.redeemedReferralCode) {
+      applyReferralCode(startParam, true);
+    }
+
+    // ===== Recarga de saldo real =====
+    let lastRealDepositReport = "";
+
+    document.getElementById("btn-generate-deposit").addEventListener("click", () => {
+      const rawAmount = parseFloat(document.getElementById("deposit-usdt-input").value || "0");
+      if (isNaN(rawAmount) || rawAmount < 1) {
+        showToast("Ingresa un monto mínimo de 1.00 USDT");
+        return;
+      }
+
+      const net = document.getElementById("deposit-wallet-network").value;
+      const addr = WALLETS[net] || "";
+      const amountStr = rawAmount.toFixed(2);
+      const depRef = `REC-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+
+      document.getElementById("real-dep-amount").textContent = amountStr;
+      document.getElementById("real-dep-net").textContent = net;
+      document.getElementById("real-dep-address").textContent = addr;
+      document.getElementById("real-dep-ref").textContent = depRef;
+      document.getElementById("deposit-real-box").style.display = "block";
+
+      lastRealDepositReport =
+        `Recarga Saldo Real | Ref: ${depRef} | Usuario ID: ${playerId} | Monto: ${amountStr} USDT | Red: ${net} | Billetera: ${addr}`;
+
+      haptic("light");
+      showToast("Datos de recarga generados");
+    });
+
+    document.getElementById("btn-copy-real-addr").addEventListener("click", () => {
+      copyText(document.getElementById("real-dep-address").textContent, "Billetera copiada");
+    });
+
+    document.getElementById("btn-send-real-dep-tg").addEventListener("click", async () => {
+      if (lastRealDepositReport) {
+        try {
+          await navigator.clipboard.writeText(lastRealDepositReport);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo soporte... pega la recarga y adjunta tu captura");
+    });
+
+    // ===== Comprar boost descontando del Saldo real =====
+    document.getElementById("btn-buy-boost-with-balance").addEventListener("click", () => {
+      if (state.boostCount >= MAX_BOOST_PURCHASES) {
+        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts comprados`);
+        return;
+      }
+
+      const packSelect = document.getElementById("boost-pack");
+      const selectedOption = packSelect.options[packSelect.selectedIndex];
+      const mult = parseFloat(packSelect.value);
+      const price = parseFloat(selectedOption.getAttribute("data-price"));
+      const currentReal = Number(state.realBalanceUsdt) || 0;
+
+      if (currentReal < price) {
+        showToast(`Saldo real insuficiente ($${currentReal.toFixed(2)}). Recarga $${price.toFixed(2)} USDT primero.`);
+        return;
+      }
+
+      state.realBalanceUsdt = Number((currentReal - price).toFixed(2));
+      state.purchasedBoostMult = Number((state.purchasedBoostMult * mult).toFixed(2));
+      state.boostCount += 1;
+      syncRankAndBoostBenefits();
+      saveState();
+      render();
+      haptic("heavy");
+
+      const statusBox = document.getElementById("boost-purchase-status");
+      statusBox.innerHTML =
+        `✅ Compraste <strong>Boost x${mult.toFixed(1)}</strong> por <strong>$${price.toFixed(2)}</strong>. ` +
+        `Saldo real restante: <strong>$${state.realBalanceUsdt.toFixed(2)}</strong>.`;
+      statusBox.style.display = "block";
+      showToast(`Boost x${mult.toFixed(1)} activado (-$${price.toFixed(2)})`);
+    });
+
+    // ===== Canjear monedas =====
+    let lastRedeemRequestText = "";
+
+    function saveWalletAddress(rawAddr, rawNet) {
+      const addr = (rawAddr || "").trim();
+      const net = rawNet || state.payoutNetwork || "USDT-TON";
+      if (addr.length < 16) {
+        showToast("Ingresa una dirección de criptomonedas válida");
+        return false;
+      }
+      state.payoutNetwork = net;
+      state.payoutAddress = addr;
+      document.getElementById("payout-network").value = net;
+      document.getElementById("payout-address-input").value = addr;
+      document.getElementById("withdraw-address-quick-input").value = addr;
+      saveState();
+      render();
+      haptic("medium");
+      showToast("Dirección de billetera guardada");
+      return true;
+    }
+
+    document.getElementById("btn-save-wallet").addEventListener("click", () => {
+      saveWalletAddress(
+        document.getElementById("payout-address-input").value,
+        document.getElementById("payout-network").value
+      );
+    });
+
+    document.getElementById("btn-save-wallet-from-withdraw").addEventListener("click", () => {
+      saveWalletAddress(
+        document.getElementById("withdraw-address-quick-input").value,
+        state.payoutNetwork || "USDT-TON"
+      );
+    });
+
+    document.getElementById("redeem-tier-select").addEventListener("change", updateSelectedTierInfo);
+
+    document.getElementById("btn-submit-coin-redeem").addEventListener("click", () => {
+      if (!canAccessRedeem()) {
+        showToast("Cumple Nivel 12 y registra tu dirección primero");
+        render();
+        return;
+      }
+
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward"));
+
+      if (state.coins < reqCoins) {
+        showToast(`Necesitas ${reqCoins.toLocaleString()} monedas para este canje`);
+        return;
+      }
+
+      const redeemCode = `CNJ-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+      state.coins -= reqCoins;
+      state.realBalanceUsdt = Number(((Number(state.realBalanceUsdt) || 0) + rewardUsd).toFixed(2));
+      saveState();
+      render();
+      haptic("heavy");
+
+      lastRedeemRequestText =
+        `Canje Monedas a Saldo Real: ${redeemCode} | Usuario ID: ${playerId} | Monedas: ${reqCoins} | Acreditado: $${rewardUsd} USDT | Red: ${state.payoutNetwork} | Dirección: ${state.payoutAddress}`;
+
+      document.getElementById("coin-redeem-details").innerHTML =
+        `<div><strong>Canje completado:</strong> ${redeemCode}</div>` +
+        `<div style="margin-top:4px;">Convertiste <strong>${reqCoins.toLocaleString()} monedas</strong> en <strong>+$${rewardUsd.toFixed(2)} de Saldo real</strong>.</div>` +
+        `<div style="margin-top:6px; color:#6ee7b7;">Ya puedes verlo y retirarlo en tu Saldo real.</div>`;
+      document.getElementById("coin-redeem-box").style.display = "block";
+      showToast(`+$${rewardUsd.toFixed(2)} acreditados a tu Saldo real`);
+    });
+
+    document.getElementById("btn-copy-redeem-request").addEventListener("click", () => {
+      if (!lastRedeemRequestText) return;
+      copyText(lastRedeemRequestText, "Comprobante de canje copiado");
+    });
+
+    document.getElementById("btn-send-redeem-tg").addEventListener("click", async () => {
+      if (lastRedeemRequestText) {
+        try {
+          await navigator.clipboard.writeText(lastRedeemRequestText);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo Telegram... pega tu comprobante");
+    });
+
+    // ===== Retirar saldo real a billetera =====
+    let lastWithdrawRequestText = "";
+
+    document.getElementById("btn-submit-real-withdraw").addEventListener("click", () => {
+      if (!hasValidWallet()) {
+        showToast("Registra primero tu dirección de billetera");
+        render();
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById("withdraw-amount-input").value || "0");
+      const currentBal = Number(state.realBalanceUsdt) || 0;
+
+      if (isNaN(amount) || amount < 1) {
+        showToast("Ingresa un monto válido de retiro (mínimo $1.00)");
+        return;
+      }
+
+      if (amount > currentBal) {
+        showToast("No tienes suficiente saldo real para ese retiro");
+        return;
+      }
+
+      const withdrawRef = `RET-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+      state.realBalanceUsdt = Number((currentBal - amount).toFixed(2));
+      saveState();
+      render();
+      haptic("heavy");
+
+      lastWithdrawRequestText =
+        `Retiro Saldo Real: ${withdrawRef} | Usuario ID: ${playerId} | Monto: $${amount.toFixed(2)} USDT | Red: ${state.payoutNetwork} | Billetera: ${state.payoutAddress}`;
+
+      document.getElementById("withdraw-result-details").innerHTML =
+        `<div><strong>Solicitud de retiro creada:</strong> ${withdrawRef}</div>` +
+        `<div style="margin-top:4px;">Monto: <strong>$${amount.toFixed(2)} USDT</strong></div>` +
+        `<div style="margin-top:4px;">Destino: <strong>${state.payoutNetwork}</strong> · <strong>${state.payoutAddress}</strong></div>` +
+        `<div style="margin-top:6px; color:#fcd34d;">Envía esta solicitud en soporte para procesar tu envío a la billetera.</div>`;
+      document.getElementById("withdraw-result-box").style.display = "block";
+      document.getElementById("withdraw-amount-input").value = "";
+      showToast(`Retiro por $${amount.toFixed(2)} generado`);
+    });
+
+    document.getElementById("btn-send-withdraw-tg").addEventListener("click", async () => {
+      if (lastWithdrawRequestText) {
+        try {
+          await navigator.clipboard.writeText(lastWithdrawRequestText);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo Telegram... pega tu solicitud de retiro");
+    });
+
+    async function copyText(text, okMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(okMsg);
+      } catch {
+        showToast("Cópialo manualmente");
+      }
+    }
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        switchTab(btn.getAttribute("data-tab"));
+      });
+    });
+
+    render();
+    setInterval(render, 2000);
+  </script>
+</body>
+</html>
