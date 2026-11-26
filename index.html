@@ -125,6 +125,7 @@
       padding: 10px;
       font-size: 13px;
       margin-bottom: 10px;
+      user-select: text;
     }
 
     .notice {
@@ -271,7 +272,7 @@
     <!-- PESTAÑA 3: BOOST CRIPTO (VERIFICACIÓN MANUAL POR CAPTURA) -->
     <section id="tab-crypto" class="tab-content">
       <div class="notice">
-        Envía el pago exacto a la dirección indicada y manda una <strong>captura de pantalla</strong> del comprobante (junto con tu ID o referencia de orden) para verificación manual.
+        Envía el pago exacto a la dirección indicada y manda una <strong>captura de pantalla</strong> del comprobante (junto con tu referencia de orden) para verificación manual.
       </div>
 
       <div class="card">
@@ -317,7 +318,19 @@
           <button id="btn-copy-summary" class="btn btn-warn" style="width:100%; margin-top:8px;">
             Copiar resumen para enviar captura
           </button>
+          <button id="btn-send-proof" class="btn btn-green" style="width:100%; margin-top:8px;">
+            Enviar captura en Telegram
+          </button>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Canjear código tras confirmación</div>
+        <div class="card-desc">
+          Si ya enviaste tu captura y te aprobaron el pago, ingresa el código de activación que recibiste.
+        </div>
+        <input id="redeem-code-input" type="text" placeholder="Ej. BOOST15" autocomplete="off" />
+        <button id="btn-redeem-code" class="btn btn-green" style="width:100%;">Activar boost</button>
       </div>
     </section>
 
@@ -346,9 +359,22 @@
 
   <script>
     const BOT_USERNAME = "cripto_game_breaking_bot";
+    const SUPPORT_CHAT_URL = "https://t.me/Cripto_Game0";
     const WALLETS = {
       "USDT-TON": "UQBlZ_oqw1P2k0TPqu309xsbhpeMqEHXd3YyWHaa5nUzQRC7",
       "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
+    };
+
+    // Códigos que entregas manualmente tras verificar la captura de pago
+    const ACTIVATION_CODES = {
+      "BOOST15": 1.5,
+      "BOOST20": 2.0,
+      "BOOST30": 3.0,
+      "BOOST40": 4.0,
+      "BOOST60": 6.0,
+      "BOOST80": 8.0,
+      "BOOST100": 10.0,
+      "BOOST150": 15.0
     };
 
     const MAX_BOOST_PURCHASES = 2;
@@ -418,7 +444,7 @@
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(() => {
         el.style.display = "none";
-      }, 2500);
+      }, 2600);
     }
 
     function haptic(type = "light") {
@@ -578,8 +604,18 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Boost Cripto (generación de orden para pago y captura manual) =====
+    // ===== Boost Cripto (generación de orden y canje manual) =====
     let lastOrderSummary = "";
+
+    function openTelegramLink(url) {
+      if (tg?.openTelegramLink && url.startsWith("https://t.me/")) {
+        tg.openTelegramLink(url);
+      } else if (tg?.openLink) {
+        tg.openLink(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    }
 
     document.getElementById("btn-create-order").addEventListener("click", () => {
       if (state.boostCount >= MAX_BOOST_PURCHASES) {
@@ -594,7 +630,6 @@
       const network = document.getElementById("crypto-network").value;
       const address = WALLETS[network] || "";
 
-      // Pequeña variación decimal para facilitar identificar pagos manuales
       const centsOffset = ((Date.now() % 89) + 11) / 1000;
       const exactAmount = (basePrice + centsOffset).toFixed(3);
       const orderRef = `ORD-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
@@ -612,6 +647,45 @@
 
       haptic("light");
       showToast("Orden generada para envío de captura");
+    });
+
+    document.getElementById("btn-send-proof").addEventListener("click", async () => {
+      if (lastOrderSummary) {
+        try {
+          await navigator.clipboard.writeText(lastOrderSummary);
+        } catch {}
+      }
+      openTelegramLink(SUPPORT_CHAT_URL);
+      showToast("Abriendo Telegram... pega el resumen y adjunta tu captura");
+    });
+
+    document.getElementById("btn-redeem-code").addEventListener("click", () => {
+      const inputEl = document.getElementById("redeem-code-input");
+      const code = (inputEl.value || "").trim().toUpperCase();
+
+      if (!code) {
+        showToast("Escribe un código de activación");
+        return;
+      }
+
+      if (state.boostCount >= MAX_BOOST_PURCHASES) {
+        showToast(`Ya tienes el máximo de ${MAX_BOOST_PURCHASES} boosts`);
+        return;
+      }
+
+      const mult = ACTIVATION_CODES[code];
+      if (!mult) {
+        showToast("Código no válido");
+        return;
+      }
+
+      state.productivityMultiplier = Number((state.productivityMultiplier * mult).toFixed(2));
+      state.boostCount += 1;
+      inputEl.value = "";
+      haptic("heavy");
+      saveState();
+      render();
+      showToast(`¡Boost activado! Multiplicador actual: x${state.productivityMultiplier.toFixed(1)}`);
     });
 
     async function copyText(text, okMsg) {
@@ -649,11 +723,7 @@
       const link = encodeURIComponent(document.getElementById("invite-link-box").textContent);
       const text = encodeURIComponent("¡Únete a mi juego en Telegram con este enlace!");
       const shareUrl = `https://t.me/share/url?url=${link}&text=${text}`;
-      if (tg?.openTelegramLink) {
-        tg.openTelegramLink(shareUrl);
-      } else {
-        window.open(shareUrl, "_blank");
-      }
+      openTelegramLink(shareUrl);
     });
 
     // Navegación por pestañas
