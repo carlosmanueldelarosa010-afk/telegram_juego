@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mini App Juego + Rigs + Boost Cripto</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #131b2e;
+      --card-2: #1a243d;
+      --text: #f3f6fc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-2: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0 0 84px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .user-info {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .user-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .badge {
+      background: rgba(59, 130, 246, 0.16);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .tap-area {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 16px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .tap-btn {
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      border: 4px solid rgba(59, 130, 246, 0.45);
+      background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 65%, #1d4ed8);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+      transition: transform 0.08s ease;
+    }
+
+    .tap-btn:active {
+      transform: scale(0.95);
+    }
+
+    .energy-wrap {
+      margin-top: 18px;
+      text-align: left;
+    }
+
+    .energy-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 10px;
+      background: var(--card-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      transition: width 0.2s ease;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0 0 6px 0;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 12px 0;
+      line-height: 1.4;
+    }
+
+    .row-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-green {
+      background: var(--accent-2);
+    }
+
+    .btn-warn {
+      background: var(--warn);
+      color: #111827;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    select, input {
+      width: 100%;
+      background: var(--card-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .notice {
+      font-size: 12px;
+      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      border-radius: 12px;
+      padding: 10px 12px;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .ref-box {
+      background: var(--card-2);
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 12px;
+      word-break: break-all;
+      color: #cbd5e1;
+      margin-bottom: 10px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(19, 27, 46, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 8px 6px;
+      z-index: 20;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      color: #fff;
+      background: rgba(59, 130, 246, 0.2);
+    }
+
+    .toast {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 50;
+      display: none;
+      max-width: 90%;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+    <div class="header">
+      <div>
+        <div id="user-name" class="user-info">Jugador</div>
+        <div id="ref-info" class="user-sub">Sin referido inicial</div>
+      </div>
+      <div id="boost-badge" class="badge">Boost: x1.0</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Monedas del juego</div>
+        <div id="coins-val" class="stat-value">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Producción / hora</div>
+        <div id="rate-val" class="stat-value">0/h</div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 1: JUEGO -->
+    <section id="tab-game" class="tab-content active">
+      <div class="tap-area">
+        <button id="tap-btn" class="tap-btn">TOCAR<br/>+<span id="tap-power">1</span></button>
+        <div class="energy-wrap">
+          <div class="energy-top">
+            <span>Energía</span>
+            <span id="energy-text">100 / 100</span>
+          </div>
+          <div class="bar-bg">
+            <div id="energy-bar" class="bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mejora de toque</div>
+        <div class="card-desc">Aumenta las monedas base obtenidas por cada toque.</div>
+        <div class="row-between">
+          <div>
+            <div>Nivel actual: <strong id="tap-lvl">1</strong></div>
+            <div class="user-sub">Costo: <span id="tap-cost">50</span> monedas</div>
+          </div>
+          <button id="btn-upgrade-tap" class="btn">Mejorar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: RIGS (MINERÍA SIMULADA) -->
+    <section id="tab-rigs" class="tab-content">
+      <div class="card">
+        <div class="card-title">Acumulador de Rigs (tope 6h)</div>
+        <div class="card-desc">
+          Simulación interna del juego. Acumula monedas según tus Rigs activos y tu multiplicador de productividad.
+        </div>
+        <div class="row-between">
+          <div>
+            <div class="user-sub">Pendiente por reclamar</div>
+            <div id="pending-coins" class="stat-value" style="font-size:22px; margin-top:2px;">0</div>
+          </div>
+          <button id="btn-claim" class="btn btn-green">Reclamar</button>
+        </div>
+      </div>
+
+      <div id="rigs-list"></div>
+    </section>
+
+    <!-- PESTAÑA 3: BOOST CRIPTO (PRODUCTIVIDAD) -->
+    <section id="tab-crypto" class="tab-content">
+      <div class="notice">
+        Simulador de mecánica con pago cripto. En producción, la acreditación del Boost debe confirmarse desde tu servidor/webhook y cumplir las reglas de Telegram y normativas locales.
+      </div>
+
+      <div class="card">
+        <div class="card-title">Aumentar productividad con criptomonedas</div>
+        <div class="card-desc">
+          Elige un paquete de productividad para multiplicar tu ganancia por toque y la producción de tus Rigs.
+        </div>
+
+        <label class="user-sub">Paquete de productividad</label>
+        <select id="boost-pack">
+          <option value="1.5|2.00">Boost x1.5 de productividad — $2.00 (equiv. cripto)</option>
+          <option value="2.0|4.50">Boost x2.0 de productividad — $4.50 (equiv. cripto)</option>
+          <option value="3.0|9.00">Boost x3.0 de productividad — $9.00 (equiv. cripto)</option>
+        </select>
+
+        <label class="user-sub">Red / Moneda de pago</label>
+        <select id="crypto-network">
+          <option value="TON">TON (The Open Network)</option>
+          <option value="USDT-TON">USDT (Red TON)</option>
+          <option value="USDT-TRC20">USDT (Red TRC20)</option>
+        </select>
+
+        <div class="ref-box">
+          <div><strong>Dirección de pago de ejemplo (reemplazar en producción):</strong></div>
+          <div id="deposit-address" style="margin-top:4px;">UQDemoDireccionCriptoEjemplo1234567890ABCD</div>
+          <div style="margin-top:6px;"><strong>Referencia de orden:</strong> <span id="order-ref">-</span></div>
+        </div>
+
+        <input id="tx-hash-input" type="text" placeholder="Opcional: pega aquí el hash de transacción (TXID)" />
+
+        <div class="row-between">
+          <button id="btn-create-order" class="btn btn-outline">Generar orden</button>
+          <button id="btn-confirm-demo" class="btn btn-warn">Simular pago confirmado</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 4: AMIGOS (REFERIDOS) -->
+    <section id="tab-friends" class="tab-content">
+      <div class="card">
+        <div class="card-title">Tu enlace de invitación</div>
+        <div class="card-desc">
+          Comparte este enlace para que nuevos jugadores entren con tu parámetro <code>startapp</code>.
+        </div>
+        <div id="invite-link-box" class="ref-box">Cargando enlace...</div>
+        <div class="row-between">
+          <button id="btn-copy-link" class="btn btn-outline">Copiar enlace</button>
+          <button id="btn-share-tg" class="btn">Compartir en Telegram</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-game">Juego</button>
+    <button class="nav-btn" data-tab="tab-rigs">Rigs</button>
+    <button class="nav-btn" data-tab="tab-crypto">Boost Cripto</button>
+    <button class="nav-btn" data-tab="tab-friends">Amigos</button>
+  </nav>
+
+  <script>
+    const BOT_USERNAME = "TuBot"; // Cambia esto por el username de tu bot sin @
+    const MAX_ACCUM_SECONDS = 6 * 3600; // Tope de acumulación pasiva: 6 horas
+    const STORAGE_KEY = "tg_mini_game_state_v1";
+
+    const RIGS_CATALOG = [
+      { id: "rig_1", name: "Rig Básico", basePerHour: 120, cost: 150 },
+      { id: "rig_2", name: "Rig Avanzado", basePerHour: 480, cost: 600 },
+      { id: "rig_3", name: "Clúster Pro", basePerHour: 1800, cost: 2200 }
+    ];
+
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const tgUser = tg?.initDataUnsafe?.user || null;
+    const startParam = tg?.initDataUnsafe?.start_param || null;
+    const playerId = tgUser?.id ? String(tgUser.id) : "demo_user_1001";
+
+    const defaultState = {
+      coins: 100,
+      energy: 100,
+      maxEnergy: 100,
+      tapLevel: 1,
+      productivityMultiplier: 1.0,
+      rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
+      lastTick: Date.now(),
+      lastClaim: Date.now(),
+      referredBy: null
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...defaultState };
+        const parsed = JSON.parse(raw);
+        return {
+          ...defaultState,
+          ...parsed,
+          rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) }
+        };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+
+    let state = loadState();
+
+    // Aplicar referido inicial si existe y no es el mismo usuario
+    if (startParam && startParam !== playerId && !state.referredBy) {
+      state.referredBy = startParam;
+      state.coins += 50;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        el.style.display = "none";
+      }, 2400);
+    }
+
+    function haptic(type = "light") {
+      try {
+        tg?.HapticFeedback?.impactOccurred(type);
+      } catch {}
+    }
+
+    function getTapUpgradeCost() {
+      return Math.floor(50 * Math.pow(1.6, state.tapLevel - 1));
+    }
+
+    function getTapGain() {
+      return Math.max(1, Math.round(state.tapLevel * state.productivityMultiplier));
+    }
+
+    function getBaseHourlyRate() {
+      let total = 0;
+      for (const rig of RIGS_CATALOG) {
+        total += (state.rigs[rig.id] || 0) * rig.basePerHour;
+      }
+      return total;
+    }
+
+    function getEffectiveHourlyRate() {
+      return Math.round(getBaseHourlyRate() * state.productivityMultiplier);
+    }
+
+    function getPendingCoins() {
+      const now = Date.now();
+      const elapsedSec = Math.max(0, Math.min(MAX_ACCUM_SECONDS, (now - state.lastClaim) / 1000));
+      const perSecond = getEffectiveHourlyRate() / 3600;
+      return Math.floor(elapsedSec * perSecond);
+    }
+
+    function updatePassiveEnergy() {
+      const now = Date.now();
+      const elapsedSec = Math.max(0, (now - state.lastTick) / 1000);
+      if (elapsedSec >= 1 && state.energy < state.maxEnergy) {
+        const regen = Math.floor(elapsedSec * 2); // +2 energía por segundo
+        if (regen > 0) {
+          state.energy = Math.min(state.maxEnergy, state.energy + regen);
+          state.lastTick = now;
+        }
+      } else if (elapsedSec >= 1) {
+        state.lastTick = now;
+      }
+    }
+
+    function renderRigs() {
+      const container = document.getElementById("rigs-list");
+      container.innerHTML = "";
+      RIGS_CATALOG.forEach((rig) => {
+        const count = state.rigs[rig.id] || 0;
+        const cost = Math.floor(rig.cost * Math.pow(1.45, count));
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div class="row-between">
+            <div>
+              <div class="card-title">${rig.name} (x${count})</div>
+              <div class="card-desc" style="margin-bottom:0;">+${rig.basePerHour}/h base · Costo: ${cost} monedas</div>
+            </div>
+            <button class="btn" data-buy-rig="${rig.id}" ${state.coins < cost ? "disabled" : ""}>Comprar</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      container.querySelectorAll("[data-buy-rig]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const rigId = btn.getAttribute("data-buy-rig");
+          const rig = RIGS_CATALOG.find((r) => r.id === rigId);
+          const count = state.rigs[rigId] || 0;
+          const cost = Math.floor(rig.cost * Math.pow(1.45, count));
+          if (state.coins < cost) return;
+          state.coins -= cost;
+          state.rigs[rigId] = count + 1;
+          haptic("medium");
+          saveState();
+          render();
+          showToast(`${rig.name} adquirido`);
+        });
+      });
+    }
+
+    function render() {
+      updatePassiveEnergy();
+
+      document.getElementById("user-name").textContent = tgUser
+        ? `${tgUser.first_name} (@${tgUser.username || playerId})`
+        : `Modo prueba (${playerId})`;
+
+      document.getElementById("ref-info").textContent = state.referredBy
+        ? `Referido por ID: ${state.referredBy}`
+        : "Sin referido inicial";
+
+      document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
+      document.getElementById("coins-val").textContent = state.coins.toLocaleString();
+      document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
+
+      document.getElementById("tap-power").textContent = getTapGain();
+      document.getElementById("energy-text").textContent = `${state.energy} / ${state.maxEnergy}`;
+      document.getElementById("energy-bar").style.width = `${(state.energy / state.maxEnergy) * 100}%`;
+
+      const tapCost = getTapUpgradeCost();
+      document.getElementById("tap-lvl").textContent = state.tapLevel;
+      document.getElementById("tap-cost").textContent = tapCost;
+      document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost;
+
+      const pending = getPendingCoins();
+      document.getElementById("pending-coins").textContent = pending.toLocaleString();
+      document.getElementById("btn-claim").disabled = pending <= 0;
+
+      const inviteUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${playerId}`;
+      document.getElementById("invite-link-box").textContent = inviteUrl;
+
+      renderRigs();
+    }
+
+    // Eventos del juego
+    document.getElementById("tap-btn").addEventListener("click", () => {
+      updatePassiveEnergy();
+      if (state.energy <= 0) {
+        showToast("Sin energía. Espera a que recargue.");
+        return;
+      }
+      state.energy -= 1;
+      state.coins += getTapGain();
+      haptic("light");
+      saveState();
+      render();
+    });
+
+    document.getElementById("btn-upgrade-tap").addEventListener("click", () => {
+      const cost = getTapUpgradeCost();
+      if (state.coins < cost) return;
+      state.coins -= cost;
+      state.tapLevel += 1;
+      haptic("medium");
+      saveState();
+      render();
+      showToast(`Toque subido a nivel ${state.tapLevel}`);
+    });
+
+    document.getElementById("btn-claim").addEventListener("click", () => {
+      const pending = getPendingCoins();
+      if (pending <= 0) return;
+      state.coins += pending;
+      state.lastClaim = Date.now();
+      haptic("heavy");
+      saveState();
+      render();
+      showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
+    });
+
+    // Eventos de Boost Cripto
+    function generateOrderRef() {
+      const net = document.getElementById("crypto-network").value;
+      const pack = document.getElementById("boost-pack").value.split("|")[0];
+      const code = `ORD-${playerId}-X${pack}-${Math.floor(1000 + Math.random() * 9000)}-${net}`;
+      document.getElementById("order-ref").textContent = code;
+      return code;
+    }
+
+    generateOrderRef();
+    document.getElementById("boost-pack").addEventListener("change", generateOrderRef);
+    document.getElementById("crypto-network").addEventListener("change", generateOrderRef);
+
+    document.getElementById("btn-create-order").addEventListener("click", () => {
+      const ref = generateOrderRef();
+      showToast(`Orden generada: ${ref}`);
+    });
+
+    document.getElementById("btn-confirm-demo").addEventListener("click", () => {
+      // En producción, este cambio debe ocurrir tras validar el pago en tu backend
+      const [multStr] = document.getElementById("boost-pack").value.split("|");
+      const newMult = parseFloat(multStr);
+      state.productivityMultiplier = Math.max(state.productivityMultiplier, newMult);
+      haptic("heavy");
+      saveState();
+      render();
+      showToast(`Productividad actualizada a x${state.productivityMultiplier.toFixed(1)}`);
+    });
+
+    // Eventos de referidos
+    document.getElementById("btn-copy-link").addEventListener("click", async () => {
+      const link = document.getElementById("invite-link-box").textContent;
+      try {
+        await navigator.clipboard.writeText(link);
+        showToast("Enlace copiado");
+      } catch {
+        showToast("Copia el enlace manualmente");
+      }
+    });
+
+    document.getElementById("btn-share-tg").addEventListener("click", () => {
+      const link = encodeURIComponent(document.getElementById("invite-link-box").textContent);
+      const text = encodeURIComponent("¡Únete a mi juego en Telegram con este enlace!");
+      const shareUrl = `https://t.me/share/url?url=${link}&text=${text}`;
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(shareUrl);
+      } else {
+        window.open(shareUrl, "_blank");
+      }
+    });
+
+    // Navegación por pestañas
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach((t) => t.classList.remove("active"));
+        btn.classList.add("active");
+        const targetId = btn.getAttribute("data-tab");
+        document.getElementById(targetId).classList.add("active");
+        render();
+      });
+    });
+
+    render();
+    setInterval(render, 2000);
+  </script>
+</body>
+</html>
