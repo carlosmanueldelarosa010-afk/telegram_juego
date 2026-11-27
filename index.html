@@ -276,6 +276,17 @@
       margin-bottom: 12px;
     }
 
+    .warn-box {
+      font-size: 12px;
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.38);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
     .lock-box {
       font-size: 12px;
       color: #fca5a5;
@@ -403,6 +414,7 @@
 <body>
   <div id="toast" class="toast"></div>
   <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" />
+  <input id="deposit-proof-file-input" type="file" accept="image/*" style="display:none;" />
 
   <div class="container">
     <div class="header">
@@ -415,7 +427,7 @@
         <div style="min-width:0;">
           <div class="app-name">Cripto Game</div>
           <div id="user-name" class="user-info">Jugador</div>
-          <div id="ref-info" class="user-sub">Rango: Novato</div>
+          <div id="ref-info" class="user-sub">ID: - · Rango: Novato</div>
         </div>
       </div>
       <div class="header-badges">
@@ -448,7 +460,7 @@
         </div>
         <div class="energy-wrap">
           <div class="energy-top">
-            <span>Energía (se recarga incluso fuera del bot)</span>
+            <span id="energy-regen-label">Energía (recarga progresiva por rango)</span>
             <span id="energy-text">100 / 100</span>
           </div>
           <div class="bar-bg">
@@ -458,11 +470,11 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Mejora de toque</div>
-        <div class="card-desc">Aumenta las monedas base por toque y suma nivel. Cada nivel requiere más monedas.</div>
+        <div class="card-title">Mejora de toque y nivel del jugador</div>
+        <div class="card-desc">El nivel de toque avanza junto con el nivel de tu jugador y multiplica tus monedas por toque.</div>
         <div class="row-between">
           <div>
-            <div>Nivel de toque: <strong id="tap-lvl">1</strong></div>
+            <div>Nivel de toque / jugador: <strong id="tap-lvl">1</strong></div>
             <div class="user-sub">Costo: <span id="tap-cost">50</span> monedas</div>
           </div>
           <button id="btn-upgrade-tap" class="btn" type="button">Mejorar</button>
@@ -513,7 +525,7 @@
       <div class="card">
         <div class="card-title">Recargar saldo real (USDT)</div>
         <div class="card-desc">
-          Al generar la recarga se envía aviso automático al canal de soporte y puedes abrir el chat con tu comprobante.
+          Genera tu solicitud para notificar a soporte, sube la captura de pantalla del pago y espera la confirmación para recibir tu código de acreditación.
         </div>
 
         <label class="user-sub" for="deposit-usdt-input">Monto a recargar (USDT)</label>
@@ -525,21 +537,39 @@
           <option value="USDT-TRC20">USDT (Red TRC20)</option>
         </select>
 
-        <button id="btn-generate-deposit" class="btn btn-green" type="button" style="width:100%;">Generar recarga y notificar a soporte</button>
+        <button id="btn-generate-deposit" class="btn btn-green" type="button" style="width:100%;">
+          Generar recarga y notificar a soporte
+        </button>
 
         <div id="deposit-real-box" class="ref-box" style="display:none; margin-top:12px;">
-          <div><strong>Monto a enviar:</strong> <span id="real-dep-amount">-</span> USDT (<span id="real-dep-net">-</span>)</div>
+          <div><strong>Folio:</strong> <span id="real-dep-folio">-</span> · <strong>Monto:</strong> <span id="real-dep-amount">-</span> USDT (<span id="real-dep-net">-</span>)</div>
           <div style="margin-top:6px;"><strong>Billetera destino:</strong></div>
           <div id="real-dep-address" style="margin-top:3px;">-</div>
           <div id="auto-report-status" class="user-sub" style="margin-top:6px; color:#6ee7b7;"></div>
-          <div style="margin-top:10px;">
-            <button id="btn-send-real-dep-tg" class="btn btn-warn" type="button" style="width:100%;">Abrir chat de soporte con captura</button>
-          </div>
-        </div>
 
-        <button id="btn-direct-support-tab" class="btn btn-outline" type="button" style="width:100%; margin-top:10px;">
-          Abrir chat de soporte directo
-        </button>
+          <div id="proof-upload-section" style="margin-top:10px; display:none;">
+            <button id="btn-pick-deposit-proof" class="btn btn-warn" type="button" style="width:100%;">
+              Subir captura de pantalla del pago
+            </button>
+            <div id="deposit-proof-filename" class="user-sub" style="margin-top:6px;"></div>
+          </div>
+
+          <div id="deposit-processing-box" class="warn-box" style="display:none; margin-top:10px; margin-bottom:0;">
+            <strong>Procesando pago:</strong> tu captura fue enviada al canal del bot. Espera hasta que se confirme el pago; cuando sea verificado aparecerá aquí tu código de acreditación.
+          </div>
+
+          <div id="deposit-approved-code-box" class="ok-box" style="display:none; margin-top:10px; margin-bottom:0;">
+            <div><strong>¡Pago verificado!</strong> Tu código de acreditación es:</div>
+            <div id="approved-credit-code-value" class="code-pill" style="margin-top:4px;">-</div>
+            <button id="btn-use-approved-code" class="btn btn-green sm" type="button" style="margin-top:8px;">
+              Usar este código ahora
+            </button>
+          </div>
+
+          <button id="btn-reset-deposit-flow" class="btn btn-outline sm" type="button" style="width:100%; margin-top:10px; display:none;">
+            Nueva recarga
+          </button>
+        </div>
       </div>
 
       <div class="card">
@@ -565,6 +595,7 @@
 
         <label class="user-sub" for="boost-pack">Paquete de productividad</label>
         <select id="boost-pack">
+          <option value="1.0" data-price="1.29">Boost +1.0x de productividad — $1.29</option>
           <option value="1.5" data-price="5.99">Boost +1.5x de productividad — $5.99</option>
           <option value="2.0" data-price="10.99">Boost +2.0x de productividad — $10.99</option>
           <option value="3.0" data-price="17.99">Boost +3.0x de productividad — $17.99</option>
@@ -619,6 +650,12 @@
         <button id="btn-register-code-tg" class="btn btn-warn" type="button" style="width:100%; margin-top:8px;">
           Enviar mi código a soporte
         </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Rangos disponibles y progreso al siguiente rango</div>
+        <div id="current-rank-summary" class="notice" style="margin-bottom:10px;"></div>
+        <div id="ranks-list"></div>
       </div>
 
       <div class="card">
@@ -735,12 +772,6 @@
         <div id="referral-chain-box" class="ref-box" style="display:none; margin-top:12px;">
           <div id="referral-chain-details"></div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Tu rango y beneficios por invitados</div>
-        <div id="current-rank-summary" class="notice" style="margin-bottom:10px;"></div>
-        <div id="ranks-list"></div>
       </div>
 
       <div class="card">
@@ -898,24 +929,23 @@
       minCommissionPercent: 6.0
     };
 
+    // A mayor rango, mayor energía máxima y mayor tiempo total para llenar la barra completa
     const REFERRAL_RANKS = [
-      { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 120,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
-      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 200,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
-      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 300,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
-      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 450,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
-      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 650,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
-      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1000, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
+      { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    fillSeconds: 60,   rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 60,   fillSeconds: 95,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 140,  fillSeconds: 140,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
+      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 240,  fillSeconds: 195,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
+      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 360,  fillSeconds: 260,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
+      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 520,  fillSeconds: 340,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
+      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 720,  fillSeconds: 440,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
+      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1000, fillSeconds: 560,  rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
     ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
-    const CYCLE_DURATION_SECONDS = 6 * 3600; // 6 horas por ciclo de minería
-    const ENERGY_REGEN_PER_SEC = 3;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v4";
+    const CYCLE_DURATION_SECONDS = 6 * 3600;
+    const STORAGE_KEY = "tg_mini_game_client_cache_v5";
 
-    // Cada rig tiene ciclo de 6 horas, costo escalonado hasta maxCost, y bono cuando se tienen los 3 activos en el ciclo
     const RIGS_CATALOG = [
       {
         id: "rig_1",
@@ -931,7 +961,7 @@
         id: "rig_2",
         name: "Rig Avanzado",
         singleCycleCoins: 8500,
-        tripleCycleCoins: 30000,
+        tripleCycleCoins: 26000,
         baseCost: 3000,
         costStep: 2500,
         maxCost: 18000,
@@ -950,10 +980,10 @@
     ];
 
     const YIELD_PLANS_CATALOG = [
-      { id: "plan_30_7d",  name: "Plan Express 7D",  cost: 30,  days: 7,  rate: 0.20 },
-      { id: "plan_50_30d", name: "Plan Estándar 30D", cost: 50,  days: 30, rate: 0.20 },
-      { id: "plan_75_30d", name: "Plan Plus 30D",     cost: 75,  days: 30, rate: 0.20 },
-      { id: "plan_100_30d",name: "Plan Elite 30D",    cost: 100, days: 30, rate: 0.20 }
+      { id: "plan_30_7d",   name: "Plan Express 7D",   cost: 30,  days: 7,  rate: 0.20 },
+      { id: "plan_50_30d",  name: "Plan Estándar 30D", cost: 50,  days: 30, rate: 0.20 },
+      { id: "plan_75_30d",  name: "Plan Plus 30D",     cost: 75,  days: 30, rate: 0.20 },
+      { id: "plan_100_30d", name: "Plan Elite 30D",    cost: 100, days: 30, rate: 0.20 }
     ];
 
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -1005,7 +1035,6 @@
       purchasedBoostMult: 1.0,
       productivityMultiplier: 1.0,
       boostCount: 0,
-      // Unidades activas del ciclo actual (6h) y compras acumuladas para escalar precio hasta maxCost
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
       rigPurchasesCount: { rig_1: 0, rig_2: 0, rig_3: 0 },
       cycleStartAt: null,
@@ -1027,7 +1056,8 @@
       influencerCommissionRate: INFLUENCER_REQUIREMENTS.minCommissionPercent,
       influencerEarnedUsdt: 0,
       influencerWithdrawalsCount: 0,
-      activeYieldPlans: []
+      activeYieldPlans: [],
+      pendingDeposit: null
     };
 
     function loadState() {
@@ -1063,12 +1093,17 @@
       return (state.rigs.rig_1 || 0) + (state.rigs.rig_2 || 0) + (state.rigs.rig_3 || 0);
     }
 
+    // Nivel del jugador y nivel de toque sincronizados
     function getPlayerLevel() {
       const totalPurchases =
         (state.rigPurchasesCount?.rig_1 || 0) +
         (state.rigPurchasesCount?.rig_2 || 0) +
         (state.rigPurchasesCount?.rig_3 || 0);
-      return Math.max(1, state.tapLevel + totalPurchases);
+      return Math.max(1, state.tapLevel + Math.floor(totalPurchases / 3));
+    }
+
+    function getEffectiveTapLevel() {
+      return Math.max(state.tapLevel, getPlayerLevel());
     }
 
     function getLevelBaseEnergy(level) {
@@ -1093,6 +1128,12 @@
       return current;
     }
 
+    function getNextReferralRank() {
+      const current = getCurrentReferralRank();
+      const idx = REFERRAL_RANKS.findIndex((r) => r.name === current.name);
+      return idx >= 0 && idx < REFERRAL_RANKS.length - 1 ? REFERRAL_RANKS[idx + 1] : null;
+    }
+
     function getMaxPurchasableBoost() {
       const rank = getCurrentReferralRank();
       const cap = typeof rank.maxBuyBoost === "number" ? rank.maxBuyBoost : 5.0;
@@ -1110,7 +1151,6 @@
       return Math.min(rig.maxCost, rig.baseCost + purchases * rig.costStep);
     }
 
-    // Calcula el total de monedas que genera el ciclo de 6 horas con los rigs actuales
     function getCycleTotalCoins() {
       let total = 0;
       for (const rig of RIGS_CATALOG) {
@@ -1124,7 +1164,6 @@
       return Math.round(total * state.productivityMultiplier);
     }
 
-    // Al cumplirse las 6 horas (CYCLE_DURATION_SECONDS), el ciclo expira y los rigs del ciclo deben comprarse nuevamente
     function checkMiningCycleExpiration(now = Date.now()) {
       if (getTotalActiveRigs() <= 0 || !state.cycleStartAt) return;
       const elapsedSec = (now - state.cycleStartAt) / 1000;
@@ -1163,6 +1202,12 @@
       const refsOk = (Number(state.verifiedReferralCount) || 0) >= INFLUENCER_REQUIREMENTS.minReferrals;
       const fundedOk = (Number(state.verifiedFundedReferralCount) || 0) >= INFLUENCER_REQUIREMENTS.minFundedReferrals;
       return refsOk && fundedOk;
+    }
+
+    function getEnergyRegenPerSec() {
+      const rank = getCurrentReferralRank();
+      const fillSeconds = Math.max(45, Number(rank.fillSeconds) || 60);
+      return (state.maxEnergy || 100) / fillSeconds;
     }
 
     function syncRankAndBoostBenefits() {
@@ -1205,9 +1250,9 @@
       const elapsedSec = Math.max(0, (now - (state.lastTick || now)) / 1000);
       if (elapsedSec >= 1) {
         if (state.energy < state.maxEnergy) {
-          const regen = Math.floor(elapsedSec * ENERGY_REGEN_PER_SEC);
-          if (regen > 0) {
-            state.energy = Math.min(state.maxEnergy, state.energy + regen);
+          const regen = getEnergyRegenPerSec() * elapsedSec;
+          if (regen >= 0.25) {
+            state.energy = Math.min(state.maxEnergy, Number((state.energy + regen).toFixed(2)));
             state.lastTick = now;
           }
         } else {
@@ -1311,9 +1356,24 @@
       if (Array.isArray(data.weeklyLeaderboard)) {
         state.weeklyLeaderboard = data.weeklyLeaderboard;
       }
+
+      if (state.pendingDeposit && state.pendingDeposit.depositId) {
+        await pollPendingDepositStatus(state.pendingDeposit.depositId);
+      }
+
       saveState();
       render();
       if (!silent) showToast("Estado sincronizado con el servidor");
+    }
+
+    async function pollPendingDepositStatus(depositId) {
+      const st = await callBackend("/api/deposit/status", { depositId });
+      if (!st || !st.ok || !state.pendingDeposit) return;
+      state.pendingDeposit.status = st.status || state.pendingDeposit.status;
+      if (st.creditCode) {
+        state.pendingDeposit.creditCode = st.creditCode;
+        state.pendingDeposit.status = "approved";
+      }
     }
 
     async function sendDirectToSupport(messageText = "", toastMsg = "Abriendo chat de soporte...") {
@@ -1334,11 +1394,11 @@
     }
 
     function getTapUpgradeCost() {
-      return Math.floor(50 * Math.pow(1.95, state.tapLevel - 1));
+      return Math.floor(50 * Math.pow(1.95, getEffectiveTapLevel() - 1));
     }
 
     function getTapGain() {
-      return Math.max(1, Math.round(state.tapLevel * state.productivityMultiplier));
+      return Math.max(1, Math.round(getEffectiveTapLevel() * state.productivityMultiplier));
     }
 
     function getEffectiveHourlyRate() {
@@ -1472,7 +1532,6 @@
         container.appendChild(card);
       });
 
-      // Planes de rendimiento en Saldo real (+20% al finalizar el ciclo)
       const plansContainer = document.getElementById("yield-plans-list");
       plansContainer.textContent = "";
       const verifiedBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
@@ -1533,7 +1592,6 @@
         plansContainer.appendChild(item);
       });
 
-      // Listado de planes activos / finalizados del usuario
       const activeListEl = document.getElementById("active-yield-plans-list");
       const myPlans = Array.isArray(state.activeYieldPlans) ? state.activeYieldPlans : [];
       activeListEl.textContent = "";
@@ -1546,8 +1604,15 @@
           box.className = "tier-item";
 
           const now = Date.now();
-          const expired = now >= Number(p.endsAt || 0);
-          const leftSec = Math.max(0, Math.floor((Number(p.endsAt || 0) - now) / 1000));
+          const start = Number(p.startedAt || now);
+          const end = Number(p.endsAt || now);
+          const totalDuration = Math.max(1, end - start);
+          const elapsed = Math.max(0, Math.min(totalDuration, now - start));
+          const progressRatio = elapsed / totalDuration;
+          const totalReturn = Number(p.totalReturn || 0);
+          const generatedSoFar = Number((totalReturn * progressRatio).toFixed(2));
+          const expired = now >= end;
+          const leftSec = Math.max(0, Math.floor((end - now) / 1000));
 
           const row = document.createElement("div");
           row.className = "row-between";
@@ -1561,12 +1626,14 @@
           d.style.marginTop = "3px";
           if (p.claimed) {
             d.style.color = "#6ee7b7";
-            d.textContent = `Cobrado: $${Number(p.totalReturn || 0).toFixed(2)} USDT · Puedes comprar uno nuevo.`;
+            d.textContent = `Cobrado: $${totalReturn.toFixed(2)} USDT · Puedes comprar uno nuevo.`;
           } else if (expired) {
             d.style.color = "#6ee7b7";
-            d.textContent = `Completado (${p.days}d). Listo para cobrar $${Number(p.totalReturn || 0).toFixed(2)} USDT (+20%).`;
+            d.textContent = `Generado: $${totalReturn.toFixed(2)} USDT (100%). Listo para reclamar.`;
           } else {
-            d.textContent = `En curso · Restante: ${formatDuration(leftSec)} · Al vencer: $${Number(p.totalReturn || 0).toFixed(2)} USDT`;
+            d.textContent =
+              `Generando ahora: $${generatedSoFar.toFixed(2)} / $${totalReturn.toFixed(2)} USDT · ` +
+              `Restante: ${formatDuration(leftSec)}`;
           }
 
           det.appendChild(h);
@@ -1577,7 +1644,7 @@
             const claimBtn = document.createElement("button");
             claimBtn.className = "btn btn-green sm";
             claimBtn.type = "button";
-            claimBtn.textContent = "Cobrar +20%";
+            claimBtn.textContent = "Reclamar";
             claimBtn.addEventListener("click", async () => {
               const res = await callBackend("/api/yield-plan/claim", { orderId: p.orderId });
               if (!res.ok) {
@@ -1591,7 +1658,7 @@
               saveState();
               render();
               haptic("heavy");
-              showToast(`Cobrado +$${Number(res.payout || p.totalReturn || 0).toFixed(2)} USDT`);
+              showToast(`Reclamado +$${Number(res.payout || totalReturn).toFixed(2)} USDT`);
             });
             row.appendChild(claimBtn);
           }
@@ -1599,6 +1666,55 @@
           box.appendChild(row);
           activeListEl.appendChild(box);
         });
+      }
+    }
+
+    function renderDepositFlow() {
+      const genBtn = document.getElementById("btn-generate-deposit");
+      const box = document.getElementById("deposit-real-box");
+      const proofSec = document.getElementById("proof-upload-section");
+      const procBox = document.getElementById("deposit-processing-box");
+      const approvedBox = document.getElementById("deposit-approved-code-box");
+      const resetBtn = document.getElementById("btn-reset-deposit-flow");
+      const pending = state.pendingDeposit;
+
+      if (!pending || !pending.depositId) {
+        genBtn.disabled = false;
+        genBtn.style.display = "block";
+        box.style.display = "none";
+        return;
+      }
+
+      // Bloquear/ocultar el botón de generar recarga hasta completar el proceso
+      genBtn.disabled = true;
+      genBtn.style.display = "none";
+      box.style.display = "block";
+
+      document.getElementById("real-dep-folio").textContent = pending.depositId;
+      document.getElementById("real-dep-amount").textContent = Number(pending.amount || 0).toFixed(2);
+      document.getElementById("real-dep-net").textContent = pending.network || "USDT-TON";
+      document.getElementById("real-dep-address").textContent = pending.walletAddress || "-";
+
+      if (pending.status === "approved" && pending.creditCode) {
+        document.getElementById("auto-report-status").textContent = "Pago verificado por soporte.";
+        proofSec.style.display = "none";
+        procBox.style.display = "none";
+        approvedBox.style.display = "block";
+        document.getElementById("approved-credit-code-value").textContent = pending.creditCode;
+        resetBtn.style.display = "block";
+      } else if (pending.status === "processing") {
+        document.getElementById("auto-report-status").textContent = "Captura enviada al canal del bot.";
+        proofSec.style.display = "none";
+        procBox.style.display = "block";
+        approvedBox.style.display = "none";
+        resetBtn.style.display = "none";
+      } else {
+        document.getElementById("auto-report-status").textContent =
+          "Aviso enviado a soporte. Sube tu captura de pantalla para poner el pago en proceso.";
+        proofSec.style.display = "block";
+        procBox.style.display = "none";
+        approvedBox.style.display = "none";
+        resetBtn.style.display = "none";
       }
     }
 
@@ -1692,6 +1808,7 @@
     function renderReferralsSection() {
       checkWeeklyReset();
       const rank = getCurrentReferralRank();
+      const nextRank = getNextReferralRank();
 
       document.getElementById("my-referral-code").textContent = state.referralCode;
       document.getElementById("my-invite-link").textContent =
@@ -1722,15 +1839,19 @@
         btnEl.disabled = false;
       }
 
+      const nextRankMsg = nextRank
+        ? `Siguiente rango: ${nextRank.name} · Te faltan ${Math.max(0, nextRank.minInvites - count)} invitado(s) verificado(s).`
+        : "Has alcanzado el rango máximo disponible (Líder Supremo).";
+
       document.getElementById("current-rank-summary").textContent =
-        `Rango actual: ${rank.name} (${count} invitados verificados) · Límite boost: x${getMaxPurchasableBoost().toFixed(1)} · ` +
-        `Límite ciclo 6h (Bás/Avz/Pro): ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3} · ` +
-        `Bonus rango: +${rank.boostBonus.toFixed(1)}x`;
+        `Rango actual: ${rank.name} (${count} invitados verificados) · ${nextRankMsg} · ` +
+        `Llenado de energía: ${rank.fillSeconds}s · Límite ciclo 6h (Bás/Avz/Pro): ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3}`;
 
       const ranksListEl = document.getElementById("ranks-list");
       ranksListEl.textContent = "";
       REFERRAL_RANKS.forEach((r) => {
         const isActive = rank.name === r.name;
+        const missingInvites = Math.max(0, r.minInvites - count);
         const div = document.createElement("div");
         div.className = `tier-item ${isActive ? "active-tier" : ""}`;
 
@@ -1740,19 +1861,20 @@
         nameEl.textContent = r.name;
         const minEl = document.createElement("span");
         minEl.className = "user-sub";
-        minEl.textContent = `${r.minInvites}+ invitados`;
+        minEl.style.color = missingInvites === 0 ? "#6ee7b7" : "#fcd34d";
+        minEl.textContent = missingInvites === 0 ? `${r.minInvites}+ inv. (Desbloqueado)` : `Faltan ${missingInvites} inv. (${r.minInvites} req.)`;
         topRow.appendChild(nameEl);
         topRow.appendChild(minEl);
 
         const rigsLine = document.createElement("div");
         rigsLine.className = "user-sub";
         rigsLine.style.marginTop = "3px";
-        rigsLine.textContent = `Límite ciclo 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3} · Límite boost: x${r.maxBuyBoost.toFixed(1)}`;
+        rigsLine.textContent = `Llenado barra energía: ${r.fillSeconds}s · Límite ciclo 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
 
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
         perksLine.style.marginTop = "2px";
-        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.energyBonus} energía · +${r.rankCoinsBonus} monedas`;
+        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.energyBonus} energía · +${r.rankCoinsBonus} monedas · Límite boost x${r.maxBuyBoost.toFixed(1)}`;
 
         div.appendChild(topRow);
         div.appendChild(rigsLine);
@@ -1870,6 +1992,7 @@
       updatePassiveEnergy();
       syncRankAndBoostBenefits();
       const rank = getCurrentReferralRank();
+      const nextRank = getNextReferralRank();
       const maxBuyBoost = getMaxPurchasableBoost();
       const currentPurchased = Number(state.purchasedBoostMult) || 1.0;
 
@@ -1880,10 +2003,15 @@
         tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
 
       renderAvatar(fullName);
-      document.getElementById("ref-info").textContent = `Rango: ${rank.name} · Código: ${state.referralCode}`;
+      const nextShort = nextRank
+        ? ` · Sig: ${nextRank.name} (${Math.max(0, nextRank.minInvites - (state.verifiedReferralCount || 0))} inv.)`
+        : " · Rango máx.";
+      document.getElementById("ref-info").textContent = `ID: ${playerId} · ${rank.name}${nextShort}`;
 
       const verifiedBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
       const playerLevel = getPlayerLevel();
+      const effectiveTap = getEffectiveTapLevel();
+
       document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
       document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
       document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} (nunca bajan)`;
@@ -1895,12 +2023,15 @@
       document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
 
       document.getElementById("tap-power").textContent = getTapGain();
-      document.getElementById("energy-text").textContent = `${state.energy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
+      document.getElementById("energy-regen-label").textContent =
+        `Energía (recarga completa en ${rank.fillSeconds}s · ${rank.name})`;
+      const shownEnergy = Math.floor(state.energy);
+      document.getElementById("energy-text").textContent = `${shownEnergy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
       document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
 
       const tapCost = getTapUpgradeCost();
       const boostGateActive = isBoostRequiredBeforeNextLevel();
-      document.getElementById("tap-lvl").textContent = state.tapLevel;
+      document.getElementById("tap-lvl").textContent = `${effectiveTap} (Jugador Nv. ${playerLevel})`;
       document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
       document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
       document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
@@ -1910,6 +2041,7 @@
       document.getElementById("btn-claim").disabled = pending <= 0;
 
       renderRigsAndYieldPlans();
+      renderDepositFlow();
       renderReferralsSection();
       renderRedeemSection();
       renderWithdrawSection();
@@ -1941,12 +2073,12 @@
 
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
-      if (state.energy <= 0) {
+      if (Math.floor(state.energy) <= 0) {
         showToast("Sin energía. Espera a que recargue.");
         return;
       }
       const gain = getTapGain();
-      state.energy -= 1;
+      state.energy = Math.max(0, Number((state.energy - 1).toFixed(2)));
       state.coins += gain;
       spawnFloatingGain(gain);
       haptic("light");
@@ -1963,11 +2095,11 @@
       const cost = getTapUpgradeCost();
       if (state.coins < cost) return;
       state.coins -= cost;
-      state.tapLevel += 1;
+      state.tapLevel = getEffectiveTapLevel() + 1;
       haptic("medium");
       saveState();
       render();
-      showToast(`Toque subido a nivel ${state.tapLevel}`);
+      showToast(`Nivel de toque y jugador subidos a ${getPlayerLevel()}`);
     });
 
     document.getElementById("btn-go-boost-gate").addEventListener("click", () => switchTab("tab-crypto"));
@@ -2116,10 +2248,13 @@
       applyReferralCode(startParam, true);
     }
 
-    // Recarga de saldo real (notifica al canal de soporte vía Worker + permite abrir chat con comprobante)
-    let lastRealDepositReport = "";
-
+    // Recarga de saldo real: bloquea botón hasta completar, sube captura al canal del bot, muestra procesando y revela el código al aprobarse
     document.getElementById("btn-generate-deposit").addEventListener("click", async () => {
+      if (state.pendingDeposit && state.pendingDeposit.depositId) {
+        renderDepositFlow();
+        return;
+      }
+
       const rawAmount = parseFloat(document.getElementById("deposit-usdt-input").value || "0");
       if (isNaN(rawAmount) || rawAmount < 1) {
         showToast("Ingresa un monto mínimo de 1.00 USDT");
@@ -2129,7 +2264,6 @@
       const net = document.getElementById("deposit-wallet-network").value;
       const addr = WALLETS[net] || "";
       const exactAmount = Number(rawAmount.toFixed(2));
-      const amountStr = exactAmount.toFixed(2);
 
       const res = await callBackend("/api/deposit/request", {
         amount: exactAmount,
@@ -2137,29 +2271,88 @@
         walletAddress: addr
       });
 
-      const folio = res?.depositId ? ` (${res.depositId})` : "";
-      document.getElementById("real-dep-amount").textContent = amountStr;
-      document.getElementById("real-dep-net").textContent = net;
-      document.getElementById("real-dep-address").textContent = addr;
-      document.getElementById("deposit-real-box").style.display = "block";
+      if (!res || !res.ok || !res.depositId) {
+        showToast(res?.error || "No se pudo generar la solicitud de recarga");
+        return;
+      }
 
-      lastRealDepositReport =
-        `Recarga USDT${folio} | Usuario: ${playerId} | Monto: ${amountStr} USDT | Red: ${net} | Billetera: ${addr}`;
+      state.pendingDeposit = {
+        depositId: res.depositId,
+        amount: exactAmount,
+        network: net,
+        walletAddress: addr,
+        status: "awaiting_screenshot",
+        creditCode: null
+      };
 
-      document.getElementById("auto-report-status").textContent = res?.ok
-        ? `Aviso enviado a soporte (${res.depositId}). Adjunta tu captura en el chat de soporte.`
-        : "No se pudo confirmar el aviso automático; abre el chat de soporte para enviar tu comprobante.";
-
-      haptic("light");
-      sendDirectToSupport(lastRealDepositReport, `Recarga por ${amountStr} USDT... abriendo soporte`);
+      saveState();
+      render();
+      haptic("medium");
+      showToast(`Solicitud ${res.depositId} generada. Sube tu captura.`);
     });
 
-    document.getElementById("btn-send-real-dep-tg").addEventListener("click", () => {
-      sendDirectToSupport(lastRealDepositReport, "Abriendo chat de soporte...");
+    document.getElementById("btn-pick-deposit-proof").addEventListener("click", () => {
+      document.getElementById("deposit-proof-file-input").click();
     });
 
-    document.getElementById("btn-direct-support-tab").addEventListener("click", () => {
-      sendDirectToSupport(lastRealDepositReport, "Abriendo chat de soporte...");
+    document.getElementById("deposit-proof-file-input").addEventListener("change", async (ev) => {
+      const file = ev.target.files?.[0];
+      ev.target.value = "";
+      if (!file || !state.pendingDeposit?.depositId) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("La captura no debe superar 5 MB");
+        return;
+      }
+
+      document.getElementById("deposit-proof-filename").textContent = `Subiendo: ${file.name}...`;
+      const fd = new FormData();
+      fd.append("playerId", playerId);
+      fd.append("depositId", state.pendingDeposit.depositId);
+      fd.append("screenshot", file);
+
+      try {
+        const resp = await fetch(`${API_BASE_URL}/api/deposit/proof`, {
+          method: "POST",
+          body: fd
+        });
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data?.ok) {
+          showToast(data?.error || "No se pudo enviar la captura");
+          document.getElementById("deposit-proof-filename").textContent = "";
+          return;
+        }
+
+        state.pendingDeposit.status = data.status || "processing";
+        if (data.creditCode) {
+          state.pendingDeposit.creditCode = data.creditCode;
+          state.pendingDeposit.status = "approved";
+        }
+        document.getElementById("deposit-proof-filename").textContent = `Enviada: ${file.name}`;
+        saveState();
+        render();
+        haptic("heavy");
+        showToast("Captura enviada. Procesando pago...");
+      } catch {
+        showToast("Error de red al subir la captura");
+        document.getElementById("deposit-proof-filename").textContent = "";
+      }
+    });
+
+    document.getElementById("btn-use-approved-code").addEventListener("click", () => {
+      const code = state.pendingDeposit?.creditCode;
+      if (!code) return;
+      document.getElementById("deposit-credit-code-input").value = code;
+      document.getElementById("btn-apply-deposit-credit").click();
+      state.pendingDeposit = null;
+      saveState();
+      render();
+    });
+
+    document.getElementById("btn-reset-deposit-flow").addEventListener("click", () => {
+      state.pendingDeposit = null;
+      saveState();
+      render();
     });
 
     document.getElementById("btn-apply-deposit-credit").addEventListener("click", async () => {
@@ -2188,6 +2381,10 @@
         state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
       } else {
         state.verifiedRealBalanceUsdt = Number(((Number(state.verifiedRealBalanceUsdt) || 0) + credited).toFixed(2));
+      }
+
+      if (state.pendingDeposit?.creditCode === rawCode) {
+        state.pendingDeposit = null;
       }
 
       inputEl.value = "";
@@ -2420,7 +2617,7 @@
     render();
     syncServerState(true);
     setInterval(render, 2000);
-    setInterval(() => syncServerState(true), 30000);
+    setInterval(() => syncServerState(true), 12000);
   </script>
 </body>
 </html>
