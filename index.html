@@ -475,7 +475,7 @@
         </div>
         <div class="energy-wrap">
           <div class="energy-top">
-            <span id="energy-regen-label">Energía (-5 por toque · llena en 6h)</span>
+            <span id="energy-regen-label">Energía (-1/toque · llena en 1h 30m)</span>
             <span id="energy-text">100 / 100</span>
           </div>
           <div class="bar-bg">
@@ -486,7 +486,7 @@
 
       <div class="card">
         <div class="card-title">Mejora de toque y nivel del jugador</div>
-        <div class="card-desc">Cada toque consume <strong>5 de energía</strong>. El tope de monedas por toque es de <strong>45 a 50</strong> en rangos bajos y hasta <strong>100</strong> en Líder Supremo.</div>
+        <div class="card-desc">En Nivel 1 y de Novato a Gerente 2 cada toque gasta <strong>1 de energía</strong> y tarda <strong>1h 30m</strong> en llenarse; desde Jefe hasta Líder Supremo tarda <strong>4h</strong> y gasta entre <strong>5 y 10</strong> por toque.</div>
         <div class="row-between">
           <div>
             <div>Nivel de toque / jugador: <strong id="tap-lvl">1</strong></div>
@@ -965,26 +965,25 @@
     };
 
     const MAX_TOTAL_BOOST_CAP = 20.0;
-    const ENERGY_COST_PER_TAP = 5;
-    const ENERGY_FULL_REFILL_SECONDS = 6 * 3600; // 6 horas para llenar la energía
 
-    // maxTapCoins: 45-50 en rangos bajos, subiendo hasta 100 en Líder Supremo
+    // Novato a Gerente 2: llena en 1h 30m (5400s) y gasta 1 de energía por toque
+    // Jefe a Líder Supremo: llena en 4h (14400s) y gasta entre 5 y 10 de energía por toque
     const REFERRAL_RANKS = [
-      { minInvites: 0,   name: "Novato",        maxTapCoins: 45,  boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 3,   name: "Empleado",      maxTapCoins: 48,  boostBonus: 0.2, energyBonus: 100,  rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 8,   name: "Gerente 1",     maxTapCoins: 50,  boostBonus: 0.5, energyBonus: 250,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
-      { minInvites: 15,  name: "Gerente 2",     maxTapCoins: 58,  boostBonus: 0.8, energyBonus: 450,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
-      { minInvites: 25,  name: "Jefe",          maxTapCoins: 68,  boostBonus: 1.2, energyBonus: 700,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
-      { minInvites: 40,  name: "Líder",         maxTapCoins: 78,  boostBonus: 1.6, energyBonus: 1000, rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
-      { minInvites: 65,  name: "Profesional",   maxTapCoins: 88,  boostBonus: 2.2, energyBonus: 1400, rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
-      { minInvites: 100, name: "Líder Supremo", maxTapCoins: 100, boostBonus: 3.5, energyBonus: 1900, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
+      { minInvites: 0,   name: "Novato",        maxTapCoins: 45,  refillSeconds: 5400,  tapEnergyCost: 1,  boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 3,   name: "Empleado",      maxTapCoins: 48,  refillSeconds: 5400,  tapEnergyCost: 1,  boostBonus: 0.2, energyBonus: 100,  rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 8,   name: "Gerente 1",     maxTapCoins: 50,  refillSeconds: 5400,  tapEnergyCost: 1,  boostBonus: 0.5, energyBonus: 250,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
+      { minInvites: 15,  name: "Gerente 2",     maxTapCoins: 58,  refillSeconds: 5400,  tapEnergyCost: 1,  boostBonus: 0.8, energyBonus: 450,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
+      { minInvites: 25,  name: "Jefe",          maxTapCoins: 68,  refillSeconds: 14400, tapEnergyCost: 5,  boostBonus: 1.2, energyBonus: 700,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
+      { minInvites: 40,  name: "Líder",         maxTapCoins: 78,  refillSeconds: 14400, tapEnergyCost: 7,  boostBonus: 1.6, energyBonus: 1000, rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
+      { minInvites: 65,  name: "Profesional",   maxTapCoins: 88,  refillSeconds: 14400, tapEnergyCost: 8,  boostBonus: 2.2, energyBonus: 1400, rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
+      { minInvites: 100, name: "Líder Supremo", maxTapCoins: 100, refillSeconds: 14400, tapEnergyCost: 10, boostBonus: 3.5, energyBonus: 1900, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
     ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
     const MIN_WITHDRAW_USDT = 10;
     const CYCLE_DURATION_SECONDS = 6 * 3600;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v8";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v9";
 
     const RIGS_CATALOG = [
       { id: "rig_1", name: "Rig Básico",   singleCycleCoins: 900,  tripleCycleCoins: 2800,  baseCost: 1100, costStep: 950,  maxCost: 7500,  maxCap: 3 },
@@ -1156,6 +1155,24 @@
       return idx >= 0 && idx < REFERRAL_RANKS.length - 1 ? REFERRAL_RANKS[idx + 1] : null;
     }
 
+    function getRefillDurationSeconds() {
+      // En Nivel 1 o en rangos Novato hasta Gerente 2: 1 hora 30 minutos (5400s)
+      if (getPlayerLevel() <= 1) return 5400;
+      const rank = getCurrentReferralRank();
+      return Number(rank.refillSeconds) || 5400;
+    }
+
+    function getTapEnergyCost() {
+      // En Nivel 1 o en rangos Novato hasta Gerente 2: 1 de energía por toque
+      if (getPlayerLevel() <= 1) return 1;
+      const rank = getCurrentReferralRank();
+      return Math.max(1, Math.min(10, Number(rank.tapEnergyCost) || 1));
+    }
+
+    function formatRefillLabel(sec) {
+      return sec >= 14400 ? "4h" : "1h 30m";
+    }
+
     function getMaxPurchasableBoost() {
       const rank = getCurrentReferralRank();
       const cap = typeof rank.maxBuyBoost === "number" ? rank.maxBuyBoost : 5.0;
@@ -1226,9 +1243,8 @@
       return refsOk && fundedOk;
     }
 
-    // Llenado completo en 6 horas (21,600 segundos)
     function getEnergyRegenPerSec() {
-      return (state.maxEnergy || 100) / ENERGY_FULL_REFILL_SECONDS;
+      return (state.maxEnergy || 100) / getRefillDurationSeconds();
     }
 
     function syncRankAndBoostBenefits() {
@@ -1275,7 +1291,7 @@
       if (elapsedSec >= 1) {
         if (state.energy < state.maxEnergy) {
           const regen = getEnergyRegenPerSec() * elapsedSec;
-          if (regen >= 0.05) {
+          if (regen >= 0.01) {
             state.energy = Math.min(state.maxEnergy, Number((state.energy + regen).toFixed(4)));
             state.lastTick = now;
           }
@@ -1454,7 +1470,6 @@
       return Math.floor(140 * Math.pow(2.35, getEffectiveTapLevel() - 1));
     }
 
-    // 45-50 en rangos bajos, hasta 100 en Líder Supremo
     function getTapGain() {
       const rank = getCurrentReferralRank();
       const capByRank = Number(rank.maxTapCoins) || 45;
@@ -2026,7 +2041,7 @@
 
       document.getElementById("current-rank-summary").textContent =
         `Rango actual: ${rank.name} (${count} invitados verificados) · ${nextRankMsg} · ` +
-        `Energía máx.: ${100 + rank.energyBonus} · Llena en 6h · Máx. toque: ${rank.maxTapCoins}`;
+        `Energía máx.: ${100 + rank.energyBonus} · Llena en ${formatRefillLabel(rank.refillSeconds)} · Gasto toque: -${rank.tapEnergyCost}`;
 
       const ranksListEl = document.getElementById("ranks-list");
       ranksListEl.textContent = "";
@@ -2050,7 +2065,7 @@
         const rigsLine = document.createElement("div");
         rigsLine.className = "user-sub";
         rigsLine.style.marginTop = "3px";
-        rigsLine.textContent = `Energía máx.: ${100 + r.energyBonus} · Llena en 6h · Máx. toque: ${r.maxTapCoins} · Límite 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
+        rigsLine.textContent = `Energía máx.: ${100 + r.energyBonus} · Llena en ${formatRefillLabel(r.refillSeconds)} · Gasto toque: -${r.tapEnergyCost} · Máx. toque: ${r.maxTapCoins}`;
 
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
@@ -2202,6 +2217,8 @@
       const maxBuyBoost = getMaxPurchasableBoost();
       const currentPurchased = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.purchasedBoostMult) || 1.0);
       const totalBoostCapped = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.productivityMultiplier) || 1.0);
+      const tapCostEnergy = getTapEnergyCost();
+      const refillLabel = formatRefillLabel(getRefillDurationSeconds());
 
       const fullName = tgUser
         ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
@@ -2231,7 +2248,7 @@
 
       document.getElementById("tap-power").textContent = getTapGain();
       document.getElementById("energy-regen-label").textContent =
-        `Energía (-${ENERGY_COST_PER_TAP}/toque · llena en 6h)`;
+        `Energía (-${tapCostEnergy}/toque · llena en ${refillLabel})`;
       const shownEnergy = Math.floor(state.energy);
       document.getElementById("energy-text").textContent = `${shownEnergy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
       document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
@@ -2280,12 +2297,13 @@
 
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
-      if (Math.floor(state.energy) < ENERGY_COST_PER_TAP) {
-        showToast(`Necesitas al menos ${ENERGY_COST_PER_TAP} de energía. Llena en 6 horas.`);
+      const costEnergy = getTapEnergyCost();
+      if (Math.floor(state.energy) < costEnergy) {
+        showToast(`Necesitas al menos ${costEnergy} de energía para tocar.`);
         return;
       }
       const gain = getTapGain();
-      state.energy = Math.max(0, Number((state.energy - ENERGY_COST_PER_TAP).toFixed(4)));
+      state.energy = Math.max(0, Number((state.energy - costEnergy).toFixed(4)));
       state.coins += gain;
       spawnFloatingGain(gain);
       haptic("light");
