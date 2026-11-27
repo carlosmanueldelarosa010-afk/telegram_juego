@@ -363,6 +363,18 @@
       background: rgba(16, 185, 129, 0.12);
     }
 
+    .status-pill {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+    .st-processing { background: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+    .st-approved { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+    .st-rejected { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .st-awaiting { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
@@ -460,7 +472,7 @@
         </div>
         <div class="energy-wrap">
           <div class="energy-top">
-            <span id="energy-regen-label">Energía (recarga progresiva por rango)</span>
+            <span id="energy-regen-label">Energía (aumenta por rango)</span>
             <span id="energy-text">100 / 100</span>
           </div>
           <div class="bar-bg">
@@ -525,7 +537,7 @@
       <div class="card">
         <div class="card-title">Recargar saldo real (USDT)</div>
         <div class="card-desc">
-          Genera tu solicitud para notificar a soporte, sube la captura de pantalla del pago y espera la confirmación para recibir tu código de acreditación.
+          Genera tu solicitud para notificar a soporte, copia la billetera, sube tu captura de pantalla y espera la confirmación para recibir tu código de acreditación.
         </div>
 
         <label class="user-sub" for="deposit-usdt-input">Monto a recargar (USDT)</label>
@@ -543,9 +555,13 @@
 
         <div id="deposit-real-box" class="ref-box" style="display:none; margin-top:12px;">
           <div><strong>Folio:</strong> <span id="real-dep-folio">-</span> · <strong>Monto:</strong> <span id="real-dep-amount">-</span> USDT (<span id="real-dep-net">-</span>)</div>
-          <div style="margin-top:6px;"><strong>Billetera destino:</strong></div>
-          <div id="real-dep-address" style="margin-top:3px;">-</div>
-          <div id="auto-report-status" class="user-sub" style="margin-top:6px; color:#6ee7b7;"></div>
+          <div style="margin-top:8px;"><strong>Billetera destino:</strong></div>
+          <div id="real-dep-address" style="margin-top:3px; font-weight:700; color:#fff;">-</div>
+          <button id="btn-copy-deposit-wallet" class="btn btn-outline sm" type="button" style="margin-top:6px;">
+            Copiar dirección de billetera
+          </button>
+
+          <div id="auto-report-status" class="user-sub" style="margin-top:8px; color:#6ee7b7;"></div>
 
           <div id="proof-upload-section" style="margin-top:10px; display:none;">
             <button id="btn-pick-deposit-proof" class="btn btn-warn" type="button" style="width:100%;">
@@ -558,8 +574,12 @@
             <strong>Procesando pago:</strong> tu captura fue enviada al canal del bot. Espera hasta que se confirme el pago; cuando sea verificado aparecerá aquí tu código de acreditación.
           </div>
 
+          <div id="deposit-rejected-box" class="lock-box" style="display:none; margin-top:10px; margin-bottom:0;">
+            <div><strong>Pago rechazado:</strong> <span id="rejected-reason-text">Comprobante no válido</span>.</div>
+          </div>
+
           <div id="deposit-approved-code-box" class="ok-box" style="display:none; margin-top:10px; margin-bottom:0;">
-            <div><strong>¡Pago verificado!</strong> Tu código de acreditación es:</div>
+            <div><strong>¡Pago aceptado!</strong> Tu código de acreditación es:</div>
             <div id="approved-credit-code-value" class="code-pill" style="margin-top:4px;">-</div>
             <button id="btn-use-approved-code" class="btn btn-green sm" type="button" style="margin-top:8px;">
               Usar este código ahora
@@ -582,6 +602,15 @@
           Validar y acreditar saldo real
         </button>
         <div id="deposit-credit-status" class="user-sub" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Historial de recargas y pagos acreditados</div>
+        <div class="card-desc">Revisa tus recargas solicitadas (aceptadas, rechazadas o en proceso) y los pagos acreditados a tu saldo real.</div>
+        <div class="user-sub" style="font-weight:700; color:#fff; margin-bottom:6px;">Solicitudes de recarga</div>
+        <div id="deposit-history-list" class="user-sub" style="margin-bottom:10px;">Sin solicitudes de recarga.</div>
+        <div class="user-sub" style="font-weight:700; color:#6ee7b7; margin-bottom:6px;">Pagos acreditados al saldo real</div>
+        <div id="credited-history-list" class="user-sub">Sin pagos acreditados todavía.</div>
       </div>
 
       <div class="card">
@@ -727,10 +756,6 @@
 
           <div class="card" style="margin-top:12px; margin-bottom:0; background:var(--card-2);">
             <div class="card-title">Registro de comisiones por retiros de referidos (mín. 6%)</div>
-            <div class="card-desc" style="margin-bottom:10px;">
-              Actualizado desde el servidor cada vez que un referido retira saldo real verificado.
-            </div>
-
             <div class="stats-grid-3">
               <div class="stat-box compact" style="background:var(--card);">
                 <div class="stat-label">Comisión</div>
@@ -817,17 +842,20 @@
       </div>
 
       <div id="redeem-action-card" class="card" style="display:none;">
-        <div class="card-title">Opciones de canje de monedas</div>
+        <div class="card-title">Opciones de canje de monedas ($10 a $100)</div>
         <div class="card-desc">
-          Selecciona uno de los paquetes disponibles para canjear tus monedas acumuladas.
+          Mínimo de canje: <strong>$10 (100,000 monedas)</strong> hasta <strong>$100 (1,000,000 monedas)</strong>.
         </div>
 
         <label class="user-sub" for="redeem-tier-select">Elige paquete de canje</label>
         <select id="redeem-tier-select">
-          <option value="10000" data-reward="5">10,000 monedas — $5</option>
-          <option value="25000" data-reward="10">25,000 monedas — $10</option>
-          <option value="40000" data-reward="15">40,000 monedas — $15</option>
-          <option value="80000" data-reward="25">80,000 monedas — $25</option>
+          <option value="100000" data-reward="10">100,000 monedas — $10</option>
+          <option value="200000" data-reward="20">200,000 monedas — $20</option>
+          <option value="300000" data-reward="30">300,000 monedas — $30</option>
+          <option value="400000" data-reward="40">400,000 monedas — $40</option>
+          <option value="500000" data-reward="50">500,000 monedas — $50</option>
+          <option value="750000" data-reward="75">750,000 monedas — $75</option>
+          <option value="1000000" data-reward="100">1,000,000 monedas — $100</option>
         </select>
 
         <div id="selected-tier-info" class="user-sub" style="margin-bottom:10px;"></div>
@@ -850,7 +878,11 @@
       <div class="card">
         <div class="card-title">Retirar saldo real verificado</div>
         <div class="card-desc">
-          Las solicitudes de retiro se validan contra tu <strong>Saldo real verificado</strong> en el servidor antes de procesarse.
+          Mínimo de retiro: <strong>$10.00 USDT</strong>. Los retiros tardan de <strong>30 minutos hasta 12 horas</strong> en completarse según cuántas solicitudes de retiro estén pendientes antes que la tuya.
+        </div>
+
+        <div class="notice">
+          <strong>Tiempo estimado de entrega:</strong> de <strong>30 minutos a 12 horas</strong>, dependiendo de cuántas solicitudes de retiro estén pendientes antes que tu solicitud.
         </div>
 
         <div class="stats-grid" style="margin-bottom:12px;">
@@ -879,11 +911,11 @@
           Guardar billetera para retiro
         </button>
 
-        <label class="user-sub" for="withdraw-amount-input">Monto a retirar (USDT)</label>
-        <input id="withdraw-amount-input" type="number" min="1" step="0.01" placeholder="Ej. 5.00" />
+        <label class="user-sub" for="withdraw-amount-input">Monto a retirar (mínimo $10.00 USDT)</label>
+        <input id="withdraw-amount-input" type="number" min="10" step="0.01" placeholder="Ej. 10.00" />
 
         <button id="btn-submit-real-withdraw" class="btn btn-green" type="button" style="width:100%;">
-          Solicitar retiro verificado
+          Solicitar retiro
         </button>
 
         <div id="withdraw-result-box" class="ref-box" style="display:none; margin-top:12px;">
@@ -892,6 +924,11 @@
             Abrir chat de soporte con folio de retiro
           </button>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mis solicitudes de retiro</div>
+        <div id="withdraw-history-list" class="user-sub">No has realizado retiros todavía.</div>
       </div>
     </section>
   </div>
@@ -916,9 +953,7 @@
     };
 
     const REFERRAL_REWARDS = {
-      inviterCoins: 200,
       inviteeCoins: 100,
-      chainStepCoins: 100,
       milestoneStep: 10,
       milestoneBoostBonus: 1.0
     };
@@ -929,54 +964,28 @@
       minCommissionPercent: 6.0
     };
 
-    // A mayor rango, mayor energía máxima y mayor tiempo total para llenar la barra completa
+    // Energía máxima aumenta al subir de rango (no de nivel) y el tiempo de llenado sube por rango
     const REFERRAL_RANKS = [
       { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    fillSeconds: 60,   rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 60,   fillSeconds: 95,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 140,  fillSeconds: 140,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
-      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 240,  fillSeconds: 195,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
-      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 360,  fillSeconds: 260,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
-      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 520,  fillSeconds: 340,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
-      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 720,  fillSeconds: 440,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
-      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1000, fillSeconds: 560,  rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
+      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 100,  fillSeconds: 95,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 250,  fillSeconds: 140,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
+      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 450,  fillSeconds: 195,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
+      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 700,  fillSeconds: 260,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
+      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 1000, fillSeconds: 340,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
+      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 1400, fillSeconds: 440,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
+      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1900, fillSeconds: 560,  rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
     ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
+    const MIN_WITHDRAW_USDT = 10;
     const CYCLE_DURATION_SECONDS = 6 * 3600;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v5";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v6";
 
     const RIGS_CATALOG = [
-      {
-        id: "rig_1",
-        name: "Rig Básico",
-        singleCycleCoins: 2500,
-        tripleCycleCoins: 9000,
-        baseCost: 800,
-        costStep: 700,
-        maxCost: 5000,
-        maxCap: 3
-      },
-      {
-        id: "rig_2",
-        name: "Rig Avanzado",
-        singleCycleCoins: 8500,
-        tripleCycleCoins: 26000,
-        baseCost: 3000,
-        costStep: 2500,
-        maxCost: 18000,
-        maxCap: 3
-      },
-      {
-        id: "rig_3",
-        name: "Clúster Pro",
-        singleCycleCoins: 24000,
-        tripleCycleCoins: 85000,
-        baseCost: 9000,
-        costStep: 7000,
-        maxCost: 50000,
-        maxCap: 3
-      }
+      { id: "rig_1", name: "Rig Básico",   singleCycleCoins: 2500, tripleCycleCoins: 9000,  baseCost: 800,  costStep: 700,  maxCost: 5000,  maxCap: 3 },
+      { id: "rig_2", name: "Rig Avanzado", singleCycleCoins: 8500, tripleCycleCoins: 26000, baseCost: 3000, costStep: 2500, maxCost: 18000, maxCap: 3 },
+      { id: "rig_3", name: "Clúster Pro",  singleCycleCoins: 24000,tripleCycleCoins: 85000, baseCost: 9000, costStep: 7000, maxCost: 50000, maxCap: 3 }
     ];
 
     const YIELD_PLANS_CATALOG = [
@@ -1057,7 +1066,10 @@
       influencerEarnedUsdt: 0,
       influencerWithdrawalsCount: 0,
       activeYieldPlans: [],
-      pendingDeposit: null
+      pendingDeposit: null,
+      depositHistory: [],
+      creditedHistory: [],
+      withdrawHistory: []
     };
 
     function loadState() {
@@ -1074,6 +1086,9 @@
           verifiedWeeklyReferralCount: Math.max(0, Number(parsed.verifiedWeeklyReferralCount) || 0),
           weeklyLeaderboard: Array.isArray(parsed.weeklyLeaderboard) ? parsed.weeklyLeaderboard : [],
           activeYieldPlans: Array.isArray(parsed.activeYieldPlans) ? parsed.activeYieldPlans : [],
+          depositHistory: Array.isArray(parsed.depositHistory) ? parsed.depositHistory : [],
+          creditedHistory: Array.isArray(parsed.creditedHistory) ? parsed.creditedHistory : [],
+          withdrawHistory: Array.isArray(parsed.withdrawHistory) ? parsed.withdrawHistory : [],
           rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) },
           rigPurchasesCount: { ...defaultState.rigPurchasesCount, ...(parsed.rigPurchasesCount || {}) }
         };
@@ -1093,7 +1108,6 @@
       return (state.rigs.rig_1 || 0) + (state.rigs.rig_2 || 0) + (state.rigs.rig_3 || 0);
     }
 
-    // Nivel del jugador y nivel de toque sincronizados
     function getPlayerLevel() {
       const totalPurchases =
         (state.rigPurchasesCount?.rig_1 || 0) +
@@ -1104,12 +1118,6 @@
 
     function getEffectiveTapLevel() {
       return Math.max(state.tapLevel, getPlayerLevel());
-    }
-
-    function getLevelBaseEnergy(level) {
-      if (level >= 100) return 2000 + (level - 100) * 20;
-      if (level >= 50) return 1000 + Math.floor(((level - 50) / 50) * 1000);
-      return 100 + Math.floor(((level - 1) / 49) * 900);
     }
 
     function checkWeeklyReset() {
@@ -1214,9 +1222,10 @@
       checkWeeklyReset();
       checkMiningCycleExpiration();
       const rank = getCurrentReferralRank();
-      const level = getPlayerLevel();
       const prevMax = state.maxEnergy || 100;
-      state.maxEnergy = getLevelBaseEnergy(level) + rank.energyBonus;
+
+      // Energía aumenta exclusivamente según el rango del usuario
+      state.maxEnergy = 100 + (Number(rank.energyBonus) || 0);
 
       if (state.maxEnergy > prevMax) {
         state.energy = Math.min(state.maxEnergy, state.energy + (state.maxEnergy - prevMax));
@@ -1353,6 +1362,15 @@
       if (Array.isArray(data.activeYieldPlans)) {
         state.activeYieldPlans = data.activeYieldPlans;
       }
+      if (Array.isArray(data.depositHistory)) {
+        state.depositHistory = data.depositHistory;
+      }
+      if (Array.isArray(data.creditedHistory)) {
+        state.creditedHistory = data.creditedHistory;
+      }
+      if (Array.isArray(data.withdrawHistory)) {
+        state.withdrawHistory = data.withdrawHistory;
+      }
       if (Array.isArray(data.weeklyLeaderboard)) {
         state.weeklyLeaderboard = data.weeklyLeaderboard;
       }
@@ -1373,6 +1391,9 @@
       if (st.creditCode) {
         state.pendingDeposit.creditCode = st.creditCode;
         state.pendingDeposit.status = "approved";
+      }
+      if (st.rejectReason) {
+        state.pendingDeposit.rejectReason = st.rejectReason;
       }
     }
 
@@ -1669,11 +1690,73 @@
       }
     }
 
+    function renderDepositHistory() {
+      const depListEl = document.getElementById("deposit-history-list");
+      const credListEl = document.getElementById("credited-history-list");
+      depListEl.textContent = "";
+      credListEl.textContent = "";
+
+      const deps = Array.isArray(state.depositHistory) ? state.depositHistory : [];
+      if (deps.length === 0) {
+        depListEl.textContent = "Sin solicitudes de recarga.";
+      } else {
+        deps.slice(0, 8).forEach((d) => {
+          const item = document.createElement("div");
+          item.className = "rank-row";
+
+          const left = document.createElement("span");
+          left.textContent = `${d.depositId} · $${Number(d.amount || 0).toFixed(2)} (${d.network || "USDT"})`;
+
+          const pill = document.createElement("span");
+          let label = "Pendiente";
+          let cls = "st-awaiting";
+          if (d.status === "processing") {
+            label = "Procesando";
+            cls = "st-processing";
+          } else if (d.status === "approved") {
+            label = "Aceptado";
+            cls = "st-approved";
+          } else if (d.status === "rejected") {
+            label = "Rechazado";
+            cls = "st-rejected";
+          }
+          pill.className = `status-pill ${cls}`;
+          pill.textContent = label;
+
+          item.appendChild(left);
+          item.appendChild(pill);
+          depListEl.appendChild(item);
+        });
+      }
+
+      const creds = Array.isArray(state.creditedHistory) ? state.creditedHistory : [];
+      if (creds.length === 0) {
+        credListEl.textContent = "Sin pagos acreditados todavía.";
+      } else {
+        creds.slice(0, 8).forEach((c) => {
+          const item = document.createElement("div");
+          item.className = "rank-row";
+
+          const left = document.createElement("span");
+          left.textContent = `${c.code} · ${c.source || "Recarga"}`;
+
+          const right = document.createElement("strong");
+          right.style.color = "#6ee7b7";
+          right.textContent = `+$${Number(c.amount || 0).toFixed(2)}`;
+
+          item.appendChild(left);
+          item.appendChild(right);
+          credListEl.appendChild(item);
+        });
+      }
+    }
+
     function renderDepositFlow() {
       const genBtn = document.getElementById("btn-generate-deposit");
       const box = document.getElementById("deposit-real-box");
       const proofSec = document.getElementById("proof-upload-section");
       const procBox = document.getElementById("deposit-processing-box");
+      const rejBox = document.getElementById("deposit-rejected-box");
       const approvedBox = document.getElementById("deposit-approved-code-box");
       const resetBtn = document.getElementById("btn-reset-deposit-flow");
       const pending = state.pendingDeposit;
@@ -1682,10 +1765,10 @@
         genBtn.disabled = false;
         genBtn.style.display = "block";
         box.style.display = "none";
+        renderDepositHistory();
         return;
       }
 
-      // Bloquear/ocultar el botón de generar recarga hasta completar el proceso
       genBtn.disabled = true;
       genBtn.style.display = "none";
       box.style.display = "block";
@@ -1696,26 +1779,39 @@
       document.getElementById("real-dep-address").textContent = pending.walletAddress || "-";
 
       if (pending.status === "approved" && pending.creditCode) {
-        document.getElementById("auto-report-status").textContent = "Pago verificado por soporte.";
+        document.getElementById("auto-report-status").textContent = "Pago aceptado y verificado por soporte.";
         proofSec.style.display = "none";
         procBox.style.display = "none";
+        rejBox.style.display = "none";
         approvedBox.style.display = "block";
         document.getElementById("approved-credit-code-value").textContent = pending.creditCode;
+        resetBtn.style.display = "block";
+      } else if (pending.status === "rejected") {
+        document.getElementById("auto-report-status").textContent = "Solicitud marcada como rechazada.";
+        proofSec.style.display = "none";
+        procBox.style.display = "none";
+        rejBox.style.display = "block";
+        approvedBox.style.display = "none";
+        document.getElementById("rejected-reason-text").textContent = pending.rejectReason || "Pago falso o no verificado";
         resetBtn.style.display = "block";
       } else if (pending.status === "processing") {
         document.getElementById("auto-report-status").textContent = "Captura enviada al canal del bot.";
         proofSec.style.display = "none";
         procBox.style.display = "block";
+        rejBox.style.display = "none";
         approvedBox.style.display = "none";
         resetBtn.style.display = "none";
       } else {
         document.getElementById("auto-report-status").textContent =
-          "Aviso enviado a soporte. Sube tu captura de pantalla para poner el pago en proceso.";
+          "Aviso enviado a soporte. Copia la billetera, paga y sube tu captura de pantalla.";
         proofSec.style.display = "block";
         procBox.style.display = "none";
+        rejBox.style.display = "none";
         approvedBox.style.display = "none";
         resetBtn.style.display = "none";
       }
+
+      renderDepositHistory();
     }
 
     function renderInfluencerSection() {
@@ -1845,7 +1941,7 @@
 
       document.getElementById("current-rank-summary").textContent =
         `Rango actual: ${rank.name} (${count} invitados verificados) · ${nextRankMsg} · ` +
-        `Llenado de energía: ${rank.fillSeconds}s · Límite ciclo 6h (Bás/Avz/Pro): ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3}`;
+        `Energía máx.: ${100 + rank.energyBonus} · Llenado: ${rank.fillSeconds}s`;
 
       const ranksListEl = document.getElementById("ranks-list");
       ranksListEl.textContent = "";
@@ -1869,12 +1965,12 @@
         const rigsLine = document.createElement("div");
         rigsLine.className = "user-sub";
         rigsLine.style.marginTop = "3px";
-        rigsLine.textContent = `Llenado barra energía: ${r.fillSeconds}s · Límite ciclo 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
+        rigsLine.textContent = `Energía máx.: ${100 + r.energyBonus} · Llenado: ${r.fillSeconds}s · Límite 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
 
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
         perksLine.style.marginTop = "2px";
-        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.energyBonus} energía · +${r.rankCoinsBonus} monedas · Límite boost x${r.maxBuyBoost.toFixed(1)}`;
+        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.rankCoinsBonus} monedas · Límite boost x${r.maxBuyBoost.toFixed(1)}`;
 
         div.appendChild(topRow);
         div.appendChild(rigsLine);
@@ -1921,9 +2017,9 @@
 
     function updateSelectedTierInfo() {
       const selectEl = document.getElementById("redeem-tier-select");
-      const reqCoins = Number(selectEl.value || 10000);
+      const reqCoins = Number(selectEl.value || 100000);
       const optionEl = selectEl.options[selectEl.selectedIndex];
-      const rewardUsd = Number(optionEl.getAttribute("data-reward") || 5);
+      const rewardUsd = Number(optionEl.getAttribute("data-reward") || 10);
       const infoEl = document.getElementById("selected-tier-info");
       const btnEl = document.getElementById("btn-submit-coin-redeem");
 
@@ -1976,6 +2072,31 @@
         ? state.payoutAddress.trim()
         : "Sin billetera registrada";
       document.getElementById("withdraw-wallet-lock").style.display = walletOk ? "none" : "block";
+
+      const histEl = document.getElementById("withdraw-history-list");
+      histEl.textContent = "";
+      const list = Array.isArray(state.withdrawHistory) ? state.withdrawHistory : [];
+      if (list.length === 0) {
+        histEl.textContent = "No has realizado retiros todavía.";
+      } else {
+        list.slice(0, 10).forEach((w) => {
+          const row = document.createElement("div");
+          row.className = "rank-row";
+
+          const left = document.createElement("span");
+          const qText = w.status === "processing" && w.queuePosition ? ` · Cola #${w.queuePosition}` : "";
+          left.textContent = `${w.withdrawId} · $${Number(w.amount || 0).toFixed(2)} (${w.payoutNetwork || "USDT"})${qText}`;
+
+          const pill = document.createElement("span");
+          const isDone = w.status === "completed";
+          pill.className = `status-pill ${isDone ? "st-approved" : "st-processing"}`;
+          pill.textContent = isDone ? "Completado" : "Procesando";
+
+          row.appendChild(left);
+          row.appendChild(pill);
+          histEl.appendChild(row);
+        });
+      }
     }
 
     function switchTab(targetId) {
@@ -2024,7 +2145,7 @@
 
       document.getElementById("tap-power").textContent = getTapGain();
       document.getElementById("energy-regen-label").textContent =
-        `Energía (recarga completa en ${rank.fillSeconds}s · ${rank.name})`;
+        `Energía (${rank.name} · llena en ${rank.fillSeconds}s)`;
       const shownEnergy = Math.floor(state.energy);
       document.getElementById("energy-text").textContent = `${shownEnergy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
       document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
@@ -2248,7 +2369,12 @@
       applyReferralCode(startParam, true);
     }
 
-    // Recarga de saldo real: bloquea botón hasta completar, sube captura al canal del bot, muestra procesando y revela el código al aprobarse
+    // Recarga de saldo real: copiar billetera, bloquear botón, subir captura, mostrar procesando o rechazo/aprobación
+    document.getElementById("btn-copy-deposit-wallet").addEventListener("click", () => {
+      const addr = state.pendingDeposit?.walletAddress || "";
+      if (addr) copyText(addr, "Dirección de billetera copiada");
+    });
+
     document.getElementById("btn-generate-deposit").addEventListener("click", async () => {
       if (state.pendingDeposit && state.pendingDeposit.depositId) {
         renderDepositFlow();
@@ -2282,13 +2408,20 @@
         network: net,
         walletAddress: addr,
         status: "awaiting_screenshot",
-        creditCode: null
+        creditCode: null,
+        rejectReason: null
       };
+
+      if (res.deposit) {
+        state.depositHistory = Array.isArray(state.depositHistory) ? state.depositHistory : [];
+        state.depositHistory.unshift(res.deposit);
+        state.depositHistory = state.depositHistory.slice(0, 25);
+      }
 
       saveState();
       render();
       haptic("medium");
-      showToast(`Solicitud ${res.depositId} generada. Sube tu captura.`);
+      showToast(`Solicitud ${res.depositId} generada. Copia la billetera y sube tu captura.`);
     });
 
     document.getElementById("btn-pick-deposit-proof").addEventListener("click", () => {
@@ -2327,6 +2460,11 @@
         if (data.creditCode) {
           state.pendingDeposit.creditCode = data.creditCode;
           state.pendingDeposit.status = "approved";
+        }
+        if (data.deposit) {
+          state.depositHistory = (state.depositHistory || []).map((d) =>
+            d.depositId === data.deposit.depositId ? { ...d, ...data.deposit } : d
+          );
         }
         document.getElementById("deposit-proof-filename").textContent = `Enviada: ${file.name}`;
         saveState();
@@ -2381,6 +2519,18 @@
         state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
       } else {
         state.verifiedRealBalanceUsdt = Number(((Number(state.verifiedRealBalanceUsdt) || 0) + credited).toFixed(2));
+      }
+      if (Array.isArray(res.creditedHistory)) {
+        state.creditedHistory = res.creditedHistory;
+      } else {
+        state.creditedHistory = Array.isArray(state.creditedHistory) ? state.creditedHistory : [];
+        state.creditedHistory.unshift({
+          id: `CRD-${Date.now().toString().slice(-6)}`,
+          code: rawCode,
+          amount: credited,
+          source: "Código acreditado",
+          creditedAt: Date.now()
+        });
       }
 
       if (state.pendingDeposit?.creditCode === rawCode) {
@@ -2543,7 +2693,7 @@
       sendDirectToSupport(lastRedeemRequestText, "Abriendo chat de soporte...");
     });
 
-    // Retirar saldo real verificado
+    // Retirar saldo real verificado (mínimo $10, estado Procesando hasta /completar_ret)
     let lastWithdrawRequestText = "";
 
     document.getElementById("btn-submit-real-withdraw").addEventListener("click", async () => {
@@ -2556,8 +2706,8 @@
       const amount = parseFloat(document.getElementById("withdraw-amount-input").value || "0");
       const currentBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
 
-      if (isNaN(amount) || amount < 1) {
-        showToast("Ingresa un monto válido de retiro (mínimo $1.00)");
+      if (isNaN(amount) || amount < MIN_WITHDRAW_USDT) {
+        showToast(`El monto mínimo de retiro es $${MIN_WITHDRAW_USDT.toFixed(2)} USDT`);
         return;
       }
       if (amount > currentBal) {
@@ -2583,6 +2733,20 @@
         state.verifiedRealBalanceUsdt = Math.max(0, Number((currentBal - amount).toFixed(2)));
       }
 
+      const newEntry = res.withdraw || {
+        withdrawId: withdrawRef,
+        playerId,
+        amount: Number(amount.toFixed(2)),
+        payoutNetwork: state.payoutNetwork,
+        payoutAddress: state.payoutAddress.trim(),
+        status: "processing",
+        queuePosition: res.queuePosition || 1,
+        createdAt: Date.now()
+      };
+      state.withdrawHistory = Array.isArray(state.withdrawHistory) ? state.withdrawHistory : [];
+      state.withdrawHistory.unshift(newEntry);
+      state.withdrawHistory = state.withdrawHistory.slice(0, 25);
+
       saveState();
       render();
       haptic("heavy");
@@ -2591,10 +2755,11 @@
         `Folio de retiro: ${withdrawRef} | Usuario: ${playerId} | Monto: $${amount.toFixed(2)} USDT | Red: ${state.payoutNetwork} | Destino: ${state.payoutAddress.trim()}`;
 
       document.getElementById("withdraw-result-details").textContent =
-        `Solicitud registrada (${withdrawRef}) por $${amount.toFixed(2)} USDT hacia ${state.payoutNetwork}. Soporte verificará el folio en el servidor antes de pagar.`;
+        `Solicitud ${withdrawRef} en estado PROCESANDO por $${amount.toFixed(2)} USDT (Cola #${newEntry.queuePosition || 1}). ` +
+        `Los retiros tardan de 30 minutos hasta 12 horas según las solicitudes pendientes antes que la tuya.`;
       document.getElementById("withdraw-result-box").style.display = "block";
       document.getElementById("withdraw-amount-input").value = "";
-      showToast(`Retiro ${withdrawRef} registrado en el servidor`);
+      showToast(`Retiro ${withdrawRef} en estado Procesando`);
     });
 
     document.getElementById("btn-send-withdraw-tg").addEventListener("click", () => {
