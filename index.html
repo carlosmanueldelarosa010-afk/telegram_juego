@@ -274,6 +274,7 @@
       padding: 12px;
       line-height: 1.45;
       margin-bottom: 12px;
+      white-space: pre-line;
     }
 
     .warn-box {
@@ -297,6 +298,7 @@
       padding: 12px;
       line-height: 1.45;
       margin-bottom: 12px;
+      white-space: pre-line;
     }
 
     .req-item {
@@ -488,7 +490,7 @@
         <div class="row-between">
           <div>
             <div>Nivel de toque / jugador: <strong id="tap-lvl">1</strong></div>
-            <div class="user-sub">Costo: <span id="tap-cost">50</span> monedas</div>
+            <div class="user-sub">Costo: <span id="tap-cost">140</span> monedas</div>
           </div>
           <button id="btn-upgrade-tap" class="btn" type="button">Mejorar</button>
         </div>
@@ -617,7 +619,7 @@
       <div class="card">
         <div class="card-title">Comprar Boost con Saldo real</div>
         <div class="card-desc">
-          Los boosts que compres se <strong>acumulan</strong>, tu boost total <strong>nunca baja</strong> y el límite comprable sube según tu rango de referidos (desde <strong>5.0x</strong> hasta <strong>20.0x</strong>).
+          Los boosts que compres se <strong>acumulan</strong>, tu boost total <strong>nunca baja</strong> y el límite máximo absoluto de boost juntos por usuario es <strong>x20.0</strong> (nunca puede aumentar más allá de x20.0).
         </div>
         <div id="boost-count" class="user-sub" style="margin-bottom:4px;"></div>
         <div id="boost-limit-info" class="user-sub" style="margin-bottom:4px; color:#93c5fd;"></div>
@@ -689,10 +691,12 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Programa Influencer (mín. 6% por retiros verificados)</div>
+        <div class="card-title">Programa Influencer (comisión fija del 6.0%)</div>
         <div class="card-desc">
-          Al alcanzar <strong>50 referidos verificados</strong> y <strong>25 referidos con recarga real verificada</strong>, puedes solicitar acceso como <strong>Influencer</strong>. Las comisiones (mínimo <strong>6%</strong>) se acreditan automáticamente desde el servidor cuando un referido complete un retiro real.
+          Al alcanzar <strong>50 referidos verificados</strong> y <strong>25 referidos con recarga real verificada</strong>, puedes enviar <strong>1 solicitud a la vez</strong> como <strong>Influencer</strong>. La comisión es fija de <strong>6.0%</strong> por cada retiro verificado de tus referidos.
         </div>
+
+        <div id="influencer-decision-banner" style="display:none;"></div>
 
         <div class="stats-grid">
           <div class="stat-box compact">
@@ -719,7 +723,7 @@
 
         <div id="influencer-unlocked-panel" style="display:none;">
           <div id="influencer-status-banner" class="ok-box">
-            Requisitos verificados: puedes enviar tu solicitud de Influencer y revisar tus comisiones acreditadas por retiros reales de referidos.
+            Requisitos verificados: puedes enviar una solicitud de Influencer con comisión fija del 6.0% y revisar tus comisiones acreditadas.
           </div>
 
           <form id="influencer-application-form">
@@ -734,29 +738,27 @@
               <option value="Instagram / X">Instagram / X</option>
             </select>
 
-            <label class="user-sub" for="inf-link-input">Enlace de tu canal, perfil o comunidad</label>
+            <label class="user-sub" for="inf-link-input">Enlace de tu red social, canal o perfil</label>
             <input id="inf-link-input" type="url" placeholder="https://..." required />
 
-            <label class="user-sub" for="inf-commission-pct-input">Comisión solicitada por retiro de referidos (mínimo 6%)</label>
-            <input id="inf-commission-pct-input" type="number" min="6" max="50" step="0.5" value="6" required />
+            <div class="notice" style="margin-bottom:10px;">
+              Comisión asignada: <strong>6.0% fija</strong> por retiro verificado de referidos (no modificable). Límite: <strong>1 solicitud a la vez</strong>.
+            </div>
 
-            <label class="user-sub" for="inf-notes-input">Notas adicionales para soporte</label>
-            <textarea id="inf-notes-input" placeholder="Cuéntanos cómo promocionarás Cripto Game..."></textarea>
+            <label class="user-sub" for="inf-notes-input">Notas adicionales</label>
+            <textarea id="inf-notes-input" placeholder="Cuéntanos sobre tu comunidad..."></textarea>
 
             <button id="btn-submit-influencer-form" type="submit" class="btn btn-green" style="width:100%;">
               Enviar solicitud de Influencer
             </button>
           </form>
 
-          <div id="influencer-submitted-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="influencer-submitted-box" class="warn-box" style="display:none; margin-top:12px;">
             <div id="influencer-submitted-details"></div>
-            <button id="btn-send-influencer-tg" type="button" class="btn btn-warn" style="width:100%; margin-top:8px;">
-              Abrir chat de soporte con mi solicitud
-            </button>
           </div>
 
           <div class="card" style="margin-top:12px; margin-bottom:0; background:var(--card-2);">
-            <div class="card-title">Registro de comisiones por retiros de referidos (mín. 6%)</div>
+            <div class="card-title">Registro de comisiones por retiros de referidos (6.0% fijo)</div>
             <div class="stats-grid-3">
               <div class="stat-box compact" style="background:var(--card);">
                 <div class="stat-label">Comisión</div>
@@ -959,8 +961,10 @@
     const INFLUENCER_REQUIREMENTS = {
       minReferrals: 50,
       minFundedReferrals: 25,
-      minCommissionPercent: 6.0
+      fixedCommissionPercent: 6.0
     };
+
+    const MAX_TOTAL_BOOST_CAP = 20.0;
 
     const REFERRAL_RANKS = [
       { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    fillSeconds: 60,   rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
@@ -977,12 +981,13 @@
     const REQUIRED_LEVEL_FOR_BOOST = 12;
     const MIN_WITHDRAW_USDT = 10;
     const CYCLE_DURATION_SECONDS = 6 * 3600;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v6";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v7";
 
+    // Economía endurecida para hacer más difícil llegar a 100,000 monedas
     const RIGS_CATALOG = [
-      { id: "rig_1", name: "Rig Básico",   singleCycleCoins: 2500, tripleCycleCoins: 9000,  baseCost: 800,  costStep: 700,  maxCost: 5000,  maxCap: 3 },
-      { id: "rig_2", name: "Rig Avanzado", singleCycleCoins: 8500, tripleCycleCoins: 26000, baseCost: 3000, costStep: 2500, maxCost: 18000, maxCap: 3 },
-      { id: "rig_3", name: "Clúster Pro",  singleCycleCoins: 24000,tripleCycleCoins: 85000, baseCost: 9000, costStep: 7000, maxCost: 50000, maxCap: 3 }
+      { id: "rig_1", name: "Rig Básico",   singleCycleCoins: 900,  tripleCycleCoins: 2800,  baseCost: 1100, costStep: 950,  maxCost: 7500,  maxCap: 3 },
+      { id: "rig_2", name: "Rig Avanzado", singleCycleCoins: 2600, tripleCycleCoins: 8000,  baseCost: 4200, costStep: 3600, maxCost: 26000, maxCap: 3 },
+      { id: "rig_3", name: "Clúster Pro",  singleCycleCoins: 7500, tripleCycleCoins: 24000, baseCost: 13500,costStep: 10500,maxCost: 75000, maxCap: 3 }
     ];
 
     const YIELD_PLANS_CATALOG = [
@@ -1059,7 +1064,7 @@
       payoutNetwork: "USDT-TON",
       payoutAddress: "",
       influencerApplication: null,
-      influencerCommissionRate: INFLUENCER_REQUIREMENTS.minCommissionPercent,
+      influencerCommissionRate: INFLUENCER_REQUIREMENTS.fixedCommissionPercent,
       influencerEarnedUsdt: 0,
       influencerWithdrawalsCount: 0,
       activeYieldPlans: [],
@@ -1110,7 +1115,7 @@
         (state.rigPurchasesCount?.rig_1 || 0) +
         (state.rigPurchasesCount?.rig_2 || 0) +
         (state.rigPurchasesCount?.rig_3 || 0);
-      return Math.max(1, state.tapLevel + Math.floor(totalPurchases / 3));
+      return Math.max(1, state.tapLevel + Math.floor(totalPurchases / 4));
     }
 
     function getEffectiveTapLevel() {
@@ -1142,7 +1147,7 @@
     function getMaxPurchasableBoost() {
       const rank = getCurrentReferralRank();
       const cap = typeof rank.maxBuyBoost === "number" ? rank.maxBuyBoost : 5.0;
-      return Math.min(20.0, Math.max(5.0, cap));
+      return Math.min(MAX_TOTAL_BOOST_CAP, Math.max(5.0, cap));
     }
 
     function getMaxRigCountForRank(rigId) {
@@ -1166,7 +1171,7 @@
           total += count * rig.singleCycleCoins;
         }
       }
-      return Math.round(total * state.productivityMultiplier);
+      return Math.round(total * Math.min(MAX_TOTAL_BOOST_CAP, state.productivityMultiplier));
     }
 
     function checkMiningCycleExpiration(now = Date.now()) {
@@ -1238,15 +1243,18 @@
         Math.floor((state.verifiedReferralCount || 0) / REFERRAL_REWARDS.milestoneStep) *
         REFERRAL_REWARDS.milestoneBoostBonus;
 
+      state.purchasedBoostMult = Math.min(
+        MAX_TOTAL_BOOST_CAP,
+        Math.max(1.0, Number(state.purchasedBoostMult) || 1.0)
+      );
+
       const computedMult = Number(
         (state.purchasedBoostMult + rank.boostBonus + milestoneBoost).toFixed(2)
       );
 
-      state.purchasedBoostMult = Math.max(1.0, Number(state.purchasedBoostMult) || 1.0);
-      state.productivityMultiplier = Math.max(
-        1.0,
-        Number(state.productivityMultiplier) || 1.0,
-        computedMult
+      state.productivityMultiplier = Math.min(
+        MAX_TOTAL_BOOST_CAP,
+        Math.max(1.0, computedMult)
       );
     }
 
@@ -1346,12 +1354,25 @@
       if (typeof data.influencerWithdrawalsCount !== "undefined") {
         state.influencerWithdrawalsCount = Math.max(0, Number(data.influencerWithdrawalsCount) || 0);
       }
-      if (typeof data.influencerCommissionRate !== "undefined") {
-        state.influencerCommissionRate = Math.max(
-          INFLUENCER_REQUIREMENTS.minCommissionPercent,
-          Number(data.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
-        );
+      state.influencerCommissionRate = INFLUENCER_REQUIREMENTS.fixedCommissionPercent;
+
+      if (data.influencerApplication) {
+        const prevApp = state.influencerApplication;
+        state.influencerApplication = data.influencerApplication;
+        if (
+          prevApp &&
+          prevApp.id === data.influencerApplication.id &&
+          prevApp.status !== data.influencerApplication.status &&
+          (data.influencerApplication.status === "approved" || data.influencerApplication.status === "rejected")
+        ) {
+          showToast(
+            data.influencerApplication.status === "approved"
+              ? `¡Solicitud ${data.influencerApplication.id} ACEPTADA!`
+              : `Solicitud ${data.influencerApplication.id} RECHAZADA`
+          );
+        }
       }
+
       if (data.redeemedReferralCode) {
         state.redeemedReferralCode = String(data.redeemedReferralCode);
       }
@@ -1411,11 +1432,11 @@
     }
 
     function getTapUpgradeCost() {
-      return Math.floor(50 * Math.pow(1.95, getEffectiveTapLevel() - 1));
+      return Math.floor(140 * Math.pow(2.35, getEffectiveTapLevel() - 1));
     }
 
     function getTapGain() {
-      return Math.max(1, Math.round(getEffectiveTapLevel() * state.productivityMultiplier));
+      return Math.max(1, Math.round((getEffectiveTapLevel() * 0.75) * Math.min(MAX_TOTAL_BOOST_CAP, state.productivityMultiplier)));
     }
 
     function getEffectiveHourlyRate() {
@@ -1830,6 +1851,26 @@
       fundedStatusEl.textContent = fundedOk ? "Cumplido" : `Faltan ${INFLUENCER_REQUIREMENTS.minFundedReferrals - fundedRefs}`;
       fundedStatusEl.className = fundedOk ? "req-ok" : "req-no";
 
+      const app = state.influencerApplication;
+      const decisionBanner = document.getElementById("influencer-decision-banner");
+      if (app && (app.status === "approved" || app.status === "rejected")) {
+        decisionBanner.style.display = "block";
+        if (app.status === "approved") {
+          decisionBanner.className = "ok-box";
+          decisionBanner.textContent =
+            `¡Solicitud de Influencer ACEPTADA! (${app.id})\n` +
+            `Tu cuenta ahora cuenta con comisión fija del 6.0% por cada retiro verificado de tus referidos.`;
+        } else {
+          decisionBanner.className = "lock-box";
+          decisionBanner.textContent =
+            `Solicitud de Influencer RECHAZADA (${app.id}).\n` +
+            `Motivo: ${app.decisionReason || "No cumplió con la verificación de la red social."}`;
+        }
+      } else {
+        decisionBanner.style.display = "none";
+        decisionBanner.textContent = "";
+      }
+
       const lockBoxEl = document.getElementById("influencer-lock-box");
       const panelEl = document.getElementById("influencer-unlocked-panel");
 
@@ -1843,15 +1884,12 @@
         if (!fundedOk) {
           missing.push(`que 25 referidos completen recarga real verificada (tienes ${fundedRefs}, te faltan ${INFLUENCER_REQUIREMENTS.minFundedReferrals - fundedRefs})`);
         }
-        lockBoxEl.textContent = `Programa Influencer bloqueado: debes ${missing.join(" y ")} para aplicar y ganar al menos 6% por retiros verificados de tus referidos.`;
+        lockBoxEl.textContent = `Programa Influencer bloqueado: debes ${missing.join(" y ")} para enviar una solicitud con comisión fija del 6.0%.`;
       } else {
         lockBoxEl.style.display = "none";
         panelEl.style.display = "block";
 
-        const activeRate = Math.max(
-          INFLUENCER_REQUIREMENTS.minCommissionPercent,
-          Number(state.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
-        );
+        const activeRate = INFLUENCER_REQUIREMENTS.fixedCommissionPercent;
         const earned = Number(state.influencerEarnedUsdt) || 0;
         const refWithdrawals = Number(state.influencerWithdrawalsCount) || 0;
 
@@ -1864,35 +1902,61 @@
           handleInput.value = tgUser?.username ? `@${tgUser.username}` : (tgUser?.first_name || "");
         }
 
-        if (state.influencerApplication) {
-          const app = state.influencerApplication;
+        const formEl = document.getElementById("influencer-application-form");
+        const submitBtn = document.getElementById("btn-submit-influencer-form");
+        const submittedBox = document.getElementById("influencer-submitted-box");
+
+        if (app && app.id) {
+          formEl.querySelectorAll("input, select, textarea").forEach((el) => {
+            el.disabled = true;
+          });
+          submitBtn.disabled = true;
+          submitBtn.textContent = app.status === "approved"
+            ? "Solicitud aceptada"
+            : app.status === "rejected"
+              ? "Solicitud rechazada (1 solicitud registrada)"
+              : "Solicitud en revisión (1 a la vez)";
+
           const detailsEl = document.getElementById("influencer-submitted-details");
           detailsEl.textContent = "";
 
+          const statusLabel = app.status === "approved"
+            ? "ACEPTADA"
+            : app.status === "rejected"
+              ? "RECHAZADA"
+              : "EN REVISIÓN";
+
           const line1 = document.createElement("div");
           const strong1 = document.createElement("strong");
-          strong1.textContent = "Solicitud registrada: ";
+          strong1.textContent = `Solicitud ${app.id} · Estado: ${statusLabel}`;
           line1.appendChild(strong1);
-          line1.appendChild(document.createTextNode(app.id));
 
           const line2 = document.createElement("div");
           line2.style.marginTop = "4px";
-          line2.textContent = `Creador: ${app.handle} · Canal: ${app.platform}`;
+          line2.textContent = `Creador: ${app.handle} · Canal: ${app.platform} · Red: ${app.link}`;
 
           const line3 = document.createElement("div");
           line3.style.marginTop = "4px";
-          line3.textContent = `Enlace: ${app.link}`;
+          line3.textContent = `Comisión fija: 6.0%. Solo puedes enviar 1 solicitud a la vez.`;
 
           const line4 = document.createElement("div");
-          line4.style.marginTop = "4px";
-          line4.style.color = "#6ee7b7";
-          line4.textContent = `Comisión mínima solicitada: ${Number(app.commissionPct).toFixed(1)}% por retiro verificado de referidos.`;
+          line4.style.marginTop = "6px";
+          line4.style.fontWeight = "700";
+          line4.textContent =
+            "Tendrás respuesta entre 24 y 48 horas después de que soporte verifique la red social agregada.";
 
           detailsEl.appendChild(line1);
           detailsEl.appendChild(line2);
           detailsEl.appendChild(line3);
           detailsEl.appendChild(line4);
-          document.getElementById("influencer-submitted-box").style.display = "block";
+          submittedBox.style.display = "block";
+        } else {
+          formEl.querySelectorAll("input, select, textarea").forEach((el) => {
+            el.disabled = false;
+          });
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Enviar solicitud de Influencer";
+          submittedBox.style.display = "none";
         }
       }
     }
@@ -1914,7 +1978,7 @@
       document.getElementById("ref-count-val").textContent = String(count);
       document.getElementById("ref-weekly-count-val").textContent = String(weeklyCount);
       document.getElementById("ref-progress-text").textContent =
-        `Faltan ${neededForNext} invitado(s) verificado(s) para tu próximo boost extra de +${REFERRAL_REWARDS.milestoneBoostBonus.toFixed(1)}x.`;
+        `Faltan ${neededForNext} invitado(s) verificado(s) para tu próximo boost extra de +${REFERRAL_REWARDS.milestoneBoostBonus.toFixed(1)}x (tope total x20.0).`;
 
       const statusEl = document.getElementById("redeemed-ref-status");
       const inputEl = document.getElementById("input-referral-code");
@@ -1966,7 +2030,7 @@
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
         perksLine.style.marginTop = "2px";
-        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.rankCoinsBonus} monedas · Límite boost x${r.maxBuyBoost.toFixed(1)}`;
+        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.rankCoinsBonus} monedas · Límite compra x${Math.min(MAX_TOTAL_BOOST_CAP, r.maxBuyBoost).toFixed(1)}`;
 
         div.appendChild(topRow);
         div.appendChild(rigsLine);
@@ -2111,7 +2175,8 @@
       const rank = getCurrentReferralRank();
       const nextRank = getNextReferralRank();
       const maxBuyBoost = getMaxPurchasableBoost();
-      const currentPurchased = Number(state.purchasedBoostMult) || 1.0;
+      const currentPurchased = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.purchasedBoostMult) || 1.0);
+      const totalBoostCapped = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.productivityMultiplier) || 1.0);
 
       const fullName = tgUser
         ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
@@ -2130,10 +2195,10 @@
       const effectiveTap = getEffectiveTapLevel();
 
       document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
-      document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
-      document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} (nunca bajan)`;
+      document.getElementById("boost-badge").textContent = `Boost: x${totalBoostCapped.toFixed(1)} / x20.0`;
+      document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} (nunca bajan · tope x20.0)`;
       document.getElementById("boost-limit-info").textContent =
-        `Límite de compra (${rank.name}): x${currentPurchased.toFixed(1)} / x${maxBuyBoost.toFixed(1)} (máx. global x20.0)`;
+        `Límite de compra (${rank.name}): x${currentPurchased.toFixed(1)} / x${maxBuyBoost.toFixed(1)} (tope absoluto x20.0)`;
       document.getElementById("boost-real-balance-info").textContent = `Saldo real verificado: $${verifiedBal.toFixed(2)} USDT`;
       document.getElementById("coins-val").textContent = state.coins.toLocaleString();
       document.getElementById("real-balance-val").textContent = `$${verifiedBal.toFixed(2)}`;
@@ -2232,8 +2297,6 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    let lastInfluencerReportText = "";
-
     async function applyReferralCode(rawCode, fromStartParam = false) {
       checkWeeklyReset();
       const code = (rawCode || "").trim().toUpperCase();
@@ -2288,13 +2351,6 @@
       applyReferralCode(document.getElementById("input-referral-code").value, false);
     });
 
-    function composeInfluencerMessage(app) {
-      return (
-        `Solicitud Influencer: ${app.id} | Usuario: ${playerId} | Creador: ${app.handle} | ` +
-        `Plataforma: ${app.platform} | Enlace: ${app.link} | Comisión solicitada: ${Number(app.commissionPct).toFixed(1)}%`
-      );
-    }
-
     document.getElementById("influencer-application-form").addEventListener("submit", async (ev) => {
       ev.preventDefault();
       if (!isInfluencerEligible()) {
@@ -2303,21 +2359,23 @@
         return;
       }
 
-      const handle = (document.getElementById("inf-handle-input").value || "").trim();
-      const platform = document.getElementById("inf-platform-select").value;
-      const link = (document.getElementById("inf-link-input").value || "").trim();
-      const rawPct = parseFloat(document.getElementById("inf-commission-pct-input").value || "6");
-      const notes = (document.getElementById("inf-notes-input").value || "").trim();
-
-      if (!handle || !link) {
-        showToast("Completa tu usuario/nombre y el enlace de tu canal");
+      if (state.influencerApplication && state.influencerApplication.id) {
+        showToast("Solo puedes enviar 1 solicitud de Influencer a la vez");
+        renderInfluencerSection();
         return;
       }
 
-      const commissionPct = Math.max(
-        INFLUENCER_REQUIREMENTS.minCommissionPercent,
-        isNaN(rawPct) ? INFLUENCER_REQUIREMENTS.minCommissionPercent : Number(rawPct.toFixed(2))
-      );
+      const handle = (document.getElementById("inf-handle-input").value || "").trim();
+      const platform = document.getElementById("inf-platform-select").value;
+      const link = (document.getElementById("inf-link-input").value || "").trim();
+      const notes = (document.getElementById("inf-notes-input").value || "").trim();
+
+      if (!handle || !link) {
+        showToast("Completa tu usuario/nombre y el enlace de tu red social");
+        return;
+      }
+
+      const commissionPct = INFLUENCER_REQUIREMENTS.fixedCommissionPercent;
 
       const res = await callBackend("/api/influencer/apply", { handle, platform, link, commissionPct, notes });
       if (!res.ok) {
@@ -2326,38 +2384,29 @@
       }
 
       const appId = res.applicationId || `INF-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
-      state.influencerCommissionRate = Math.max(
-        INFLUENCER_REQUIREMENTS.minCommissionPercent,
-        Number(res.commissionPct) || commissionPct
-      );
-      state.influencerApplication = {
+      state.influencerCommissionRate = INFLUENCER_REQUIREMENTS.fixedCommissionPercent;
+      state.influencerApplication = res.application || {
         id: appId,
         handle,
         platform,
         link,
-        commissionPct: state.influencerCommissionRate,
+        commissionPct: INFLUENCER_REQUIREMENTS.fixedCommissionPercent,
         notes,
+        status: "pending",
+        decisionReason: "",
         createdAt: Date.now()
       };
 
-      lastInfluencerReportText = composeInfluencerMessage(state.influencerApplication);
       saveState();
       render();
       haptic("heavy");
-      showToast("Solicitud de Influencer registrada en el servidor");
-    });
-
-    document.getElementById("btn-send-influencer-tg").addEventListener("click", () => {
-      const msg =
-        lastInfluencerReportText ||
-        (state.influencerApplication ? composeInfluencerMessage(state.influencerApplication) : "");
-      sendDirectToSupport(msg, "Abriendo chat de soporte...");
+      showToast("Solicitud enviada. Respuesta en 24 a 48h tras verificar tu red social.");
     });
 
     document.getElementById("btn-refresh-influencer-commissions").addEventListener("click", async () => {
       await syncServerState(false);
       document.getElementById("inf-commission-log").textContent =
-        `Sincronizado: $${(Number(state.influencerEarnedUsdt) || 0).toFixed(2)} acumulados en ${Number(state.influencerWithdrawalsCount) || 0} retiro(s) verificado(s) de referidos.`;
+        `Sincronizado: $${(Number(state.influencerEarnedUsdt) || 0).toFixed(2)} acumulados (comisión fija 6.0%) en ${Number(state.influencerWithdrawalsCount) || 0} retiro(s) verificado(s) de referidos.`;
     });
 
     if (startParam && !state.redeemedReferralCode) {
@@ -2545,7 +2594,8 @@
       syncRankAndBoostBenefits();
       const rank = getCurrentReferralRank();
       const maxBuyBoost = getMaxPurchasableBoost();
-      const currentPurchased = Number(state.purchasedBoostMult) || 1.0;
+      const currentPurchased = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.purchasedBoostMult) || 1.0);
+      const currentTotal = Math.min(MAX_TOTAL_BOOST_CAP, Number(state.productivityMultiplier) || 1.0);
 
       const packSelect = document.getElementById("boost-pack");
       const selectedOption = packSelect.options[packSelect.selectedIndex];
@@ -2554,12 +2604,12 @@
       const currentVerified = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
 
       const nextPurchased = Number((currentPurchased + addBoost).toFixed(2));
-      if (nextPurchased > maxBuyBoost) {
-        const remainingRoom = Math.max(0, Number((maxBuyBoost - currentPurchased).toFixed(2)));
+      const nextTotalEstimate = Number((currentTotal + addBoost).toFixed(2));
+
+      if (nextTotalEstimate > MAX_TOTAL_BOOST_CAP || nextPurchased > maxBuyBoost) {
+        const remainingRoom = Math.max(0, Number((Math.min(maxBuyBoost, MAX_TOTAL_BOOST_CAP) - currentPurchased).toFixed(2)));
         const msg =
-          maxBuyBoost < 20.0
-            ? `Tu rango ${rank.name} permite comprar hasta x${maxBuyBoost.toFixed(1)} (disponible: +${remainingRoom.toFixed(1)}x).`
-            : `Alcanzaste el límite máximo comprable de x20.0 (disponible: +${remainingRoom.toFixed(1)}x).`;
+          `Límite de boost alcanzado: el máximo absoluto por usuario es x20.0 (disponible en tu rango ${rank.name}: +${remainingRoom.toFixed(1)}x).`;
         showToast(msg);
         const statusBox = document.getElementById("boost-purchase-status");
         statusBox.textContent = msg;
@@ -2584,7 +2634,7 @@
         state.verifiedRealBalanceUsdt = Math.max(0, Number((currentVerified - price).toFixed(2)));
       }
 
-      state.purchasedBoostMult = nextPurchased;
+      state.purchasedBoostMult = Math.min(MAX_TOTAL_BOOST_CAP, nextPurchased);
       state.boostCount = (state.boostCount || 0) + 1;
       syncRankAndBoostBenefits();
       saveState();
@@ -2594,8 +2644,7 @@
       const statusBox = document.getElementById("boost-purchase-status");
       statusBox.textContent =
         `Compraste +${addBoost.toFixed(1)}x Boost por $${price.toFixed(2)}. ` +
-        `Boost comprado: x${state.purchasedBoostMult.toFixed(1)} / x${maxBuyBoost.toFixed(1)} (${rank.name}) · ` +
-        `Boost total: x${state.productivityMultiplier.toFixed(1)}.`;
+        `Boost total: x${state.productivityMultiplier.toFixed(1)} / x20.0 (nunca supera x20.0).`;
       statusBox.style.display = "block";
       showToast(`+${addBoost.toFixed(1)}x acumulado`);
     });
