@@ -475,7 +475,7 @@
         </div>
         <div class="energy-wrap">
           <div class="energy-top">
-            <span id="energy-regen-label">Energía (aumenta por rango)</span>
+            <span id="energy-regen-label">Energía (-5 por toque · llena en 6h)</span>
             <span id="energy-text">100 / 100</span>
           </div>
           <div class="bar-bg">
@@ -486,7 +486,7 @@
 
       <div class="card">
         <div class="card-title">Mejora de toque y nivel del jugador</div>
-        <div class="card-desc">El nivel de toque avanza junto con el nivel de tu jugador y multiplica tus monedas por toque.</div>
+        <div class="card-desc">Cada toque consume <strong>5 de energía</strong>. El tope de monedas por toque es de <strong>45 a 50</strong> en rangos bajos y hasta <strong>100</strong> en Líder Supremo.</div>
         <div class="row-between">
           <div>
             <div>Nivel de toque / jugador: <strong id="tap-lvl">1</strong></div>
@@ -965,25 +965,27 @@
     };
 
     const MAX_TOTAL_BOOST_CAP = 20.0;
+    const ENERGY_COST_PER_TAP = 5;
+    const ENERGY_FULL_REFILL_SECONDS = 6 * 3600; // 6 horas para llenar la energía
 
+    // maxTapCoins: 45-50 en rangos bajos, subiendo hasta 100 en Líder Supremo
     const REFERRAL_RANKS = [
-      { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    fillSeconds: 60,   rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 100,  fillSeconds: 95,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
-      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 250,  fillSeconds: 140,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
-      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 450,  fillSeconds: 195,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
-      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 700,  fillSeconds: 260,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
-      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 1000, fillSeconds: 340,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
-      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 1400, fillSeconds: 440,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
-      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1900, fillSeconds: 560,  rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
+      { minInvites: 0,   name: "Novato",        maxTapCoins: 45,  boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 3,   name: "Empleado",      maxTapCoins: 48,  boostBonus: 0.2, energyBonus: 100,  rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 8,   name: "Gerente 1",     maxTapCoins: 50,  boostBonus: 0.5, energyBonus: 250,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
+      { minInvites: 15,  name: "Gerente 2",     maxTapCoins: 58,  boostBonus: 0.8, energyBonus: 450,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
+      { minInvites: 25,  name: "Jefe",          maxTapCoins: 68,  boostBonus: 1.2, energyBonus: 700,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
+      { minInvites: 40,  name: "Líder",         maxTapCoins: 78,  boostBonus: 1.6, energyBonus: 1000, rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
+      { minInvites: 65,  name: "Profesional",   maxTapCoins: 88,  boostBonus: 2.2, energyBonus: 1400, rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
+      { minInvites: 100, name: "Líder Supremo", maxTapCoins: 100, boostBonus: 3.5, energyBonus: 1900, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
     ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
     const MIN_WITHDRAW_USDT = 10;
     const CYCLE_DURATION_SECONDS = 6 * 3600;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v7";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v8";
 
-    // Economía endurecida para hacer más difícil llegar a 100,000 monedas
     const RIGS_CATALOG = [
       { id: "rig_1", name: "Rig Básico",   singleCycleCoins: 900,  tripleCycleCoins: 2800,  baseCost: 1100, costStep: 950,  maxCost: 7500,  maxCap: 3 },
       { id: "rig_2", name: "Rig Avanzado", singleCycleCoins: 2600, tripleCycleCoins: 8000,  baseCost: 4200, costStep: 3600, maxCost: 26000, maxCap: 3 },
@@ -1037,50 +1039,53 @@
       return `${rawName}-${suffix}`;
     }
 
-    const defaultState = {
-      coins: 0,
-      verifiedRealBalanceUsdt: 0,
-      energy: 100,
-      maxEnergy: 100,
-      tapLevel: 1,
-      purchasedBoostMult: 1.0,
-      productivityMultiplier: 1.0,
-      boostCount: 0,
-      rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
-      rigPurchasesCount: { rig_1: 0, rig_2: 0, rig_3: 0 },
-      cycleStartAt: null,
-      cycleCoinsClaimed: 0,
-      lastTick: Date.now(),
-      referredBy: null,
-      redeemedReferralCode: null,
-      referralCode: null,
-      verifiedReferralCount: 0,
-      verifiedFundedReferralCount: 0,
-      verifiedWeeklyReferralCount: 0,
-      weeklyLeaderboard: [],
-      weekAnchorKey: getCurrentSundayMidnightKey(),
-      awardedRankMinInvites: 0,
-      customAvatar: null,
-      payoutNetwork: "USDT-TON",
-      payoutAddress: "",
-      influencerApplication: null,
-      influencerCommissionRate: INFLUENCER_REQUIREMENTS.fixedCommissionPercent,
-      influencerEarnedUsdt: 0,
-      influencerWithdrawalsCount: 0,
-      activeYieldPlans: [],
-      pendingDeposit: null,
-      depositHistory: [],
-      creditedHistory: [],
-      withdrawHistory: []
-    };
+    function createFreshDefaultState() {
+      return {
+        coins: 0,
+        verifiedRealBalanceUsdt: 0,
+        energy: 100,
+        maxEnergy: 100,
+        tapLevel: 1,
+        purchasedBoostMult: 1.0,
+        productivityMultiplier: 1.0,
+        boostCount: 0,
+        rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
+        rigPurchasesCount: { rig_1: 0, rig_2: 0, rig_3: 0 },
+        cycleStartAt: null,
+        cycleCoinsClaimed: 0,
+        lastTick: Date.now(),
+        referredBy: null,
+        redeemedReferralCode: null,
+        referralCode: generateAutoReferralCode(),
+        verifiedReferralCount: 0,
+        verifiedFundedReferralCount: 0,
+        verifiedWeeklyReferralCount: 0,
+        weeklyLeaderboard: [],
+        weekAnchorKey: getCurrentSundayMidnightKey(),
+        awardedRankMinInvites: 0,
+        customAvatar: null,
+        payoutNetwork: "USDT-TON",
+        payoutAddress: "",
+        influencerApplication: null,
+        influencerCommissionRate: INFLUENCER_REQUIREMENTS.fixedCommissionPercent,
+        influencerEarnedUsdt: 0,
+        influencerWithdrawalsCount: 0,
+        activeYieldPlans: [],
+        pendingDeposit: null,
+        depositHistory: [],
+        creditedHistory: [],
+        withdrawHistory: []
+      };
+    }
 
     function loadState() {
+      const freshBase = createFreshDefaultState();
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ...defaultState, referralCode: generateAutoReferralCode() };
+        if (!raw) return freshBase;
         const parsed = JSON.parse(raw);
         const merged = {
-          ...defaultState,
+          ...freshBase,
           ...parsed,
           verifiedRealBalanceUsdt: Math.max(0, Number(parsed.verifiedRealBalanceUsdt) || 0),
           verifiedReferralCount: Math.max(0, Number(parsed.verifiedReferralCount) || 0),
@@ -1091,19 +1096,26 @@
           depositHistory: Array.isArray(parsed.depositHistory) ? parsed.depositHistory : [],
           creditedHistory: Array.isArray(parsed.creditedHistory) ? parsed.creditedHistory : [],
           withdrawHistory: Array.isArray(parsed.withdrawHistory) ? parsed.withdrawHistory : [],
-          rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) },
-          rigPurchasesCount: { ...defaultState.rigPurchasesCount, ...(parsed.rigPurchasesCount || {}) }
+          rigs: { ...freshBase.rigs, ...(parsed.rigs || {}) },
+          rigPurchasesCount: { ...freshBase.rigPurchasesCount, ...(parsed.rigPurchasesCount || {}) }
         };
         if (!merged.referralCode) merged.referralCode = generateAutoReferralCode();
         return merged;
       } catch {
-        return { ...defaultState, referralCode: generateAutoReferralCode() };
+        return freshBase;
       }
     }
 
     let state = loadState();
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function resetLocalAccountToZero() {
+      const keptCode = state.referralCode || generateAutoReferralCode();
+      state = createFreshDefaultState();
+      state.referralCode = keptCode;
+      saveState();
     }
 
     function getTotalActiveRigs() {
@@ -1214,10 +1226,9 @@
       return refsOk && fundedOk;
     }
 
+    // Llenado completo en 6 horas (21,600 segundos)
     function getEnergyRegenPerSec() {
-      const rank = getCurrentReferralRank();
-      const fillSeconds = Math.max(45, Number(rank.fillSeconds) || 60);
-      return (state.maxEnergy || 100) / fillSeconds;
+      return (state.maxEnergy || 100) / ENERGY_FULL_REFILL_SECONDS;
     }
 
     function syncRankAndBoostBenefits() {
@@ -1264,8 +1275,8 @@
       if (elapsedSec >= 1) {
         if (state.energy < state.maxEnergy) {
           const regen = getEnergyRegenPerSec() * elapsedSec;
-          if (regen >= 0.25) {
-            state.energy = Math.min(state.maxEnergy, Number((state.energy + regen).toFixed(2)));
+          if (regen >= 0.05) {
+            state.energy = Math.min(state.maxEnergy, Number((state.energy + regen).toFixed(4)));
             state.lastTick = now;
           }
         } else {
@@ -1336,6 +1347,14 @@
         if (!silent && data?.error) showToast(data.error);
         return;
       }
+
+      if (data.accountReset) {
+        resetLocalAccountToZero();
+        render();
+        showToast("Tu cuenta fue reiniciada desde 0 por administración");
+        return;
+      }
+
       if (typeof data.verifiedRealBalanceUsdt !== "undefined") {
         state.verifiedRealBalanceUsdt = Math.max(0, Number(data.verifiedRealBalanceUsdt) || 0);
       }
@@ -1435,8 +1454,14 @@
       return Math.floor(140 * Math.pow(2.35, getEffectiveTapLevel() - 1));
     }
 
+    // 45-50 en rangos bajos, hasta 100 en Líder Supremo
     function getTapGain() {
-      return Math.max(1, Math.round((getEffectiveTapLevel() * 0.75) * Math.min(MAX_TOTAL_BOOST_CAP, state.productivityMultiplier)));
+      const rank = getCurrentReferralRank();
+      const capByRank = Number(rank.maxTapCoins) || 45;
+      const raw = Math.round(
+        (getEffectiveTapLevel() * 1.4) * (1 + (Math.min(MAX_TOTAL_BOOST_CAP, state.productivityMultiplier) - 1) * 0.12)
+      );
+      return Math.max(1, Math.min(capByRank, 100, raw));
     }
 
     function getEffectiveHourlyRate() {
@@ -2001,7 +2026,7 @@
 
       document.getElementById("current-rank-summary").textContent =
         `Rango actual: ${rank.name} (${count} invitados verificados) · ${nextRankMsg} · ` +
-        `Energía máx.: ${100 + rank.energyBonus} · Llenado: ${rank.fillSeconds}s`;
+        `Energía máx.: ${100 + rank.energyBonus} · Llena en 6h · Máx. toque: ${rank.maxTapCoins}`;
 
       const ranksListEl = document.getElementById("ranks-list");
       ranksListEl.textContent = "";
@@ -2025,7 +2050,7 @@
         const rigsLine = document.createElement("div");
         rigsLine.className = "user-sub";
         rigsLine.style.marginTop = "3px";
-        rigsLine.textContent = `Energía máx.: ${100 + r.energyBonus} · Llenado: ${r.fillSeconds}s · Límite 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
+        rigsLine.textContent = `Energía máx.: ${100 + r.energyBonus} · Llena en 6h · Máx. toque: ${r.maxTapCoins} · Límite 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3}`;
 
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
@@ -2206,14 +2231,14 @@
 
       document.getElementById("tap-power").textContent = getTapGain();
       document.getElementById("energy-regen-label").textContent =
-        `Energía (${rank.name} · llena en ${rank.fillSeconds}s)`;
+        `Energía (-${ENERGY_COST_PER_TAP}/toque · llena en 6h)`;
       const shownEnergy = Math.floor(state.energy);
       document.getElementById("energy-text").textContent = `${shownEnergy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
       document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
 
       const tapCost = getTapUpgradeCost();
       const boostGateActive = isBoostRequiredBeforeNextLevel();
-      document.getElementById("tap-lvl").textContent = `${effectiveTap} (Jugador Nv. ${playerLevel})`;
+      document.getElementById("tap-lvl").textContent = `${effectiveTap} (Jugador Nv. ${playerLevel} · máx. toque ${rank.maxTapCoins})`;
       document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
       document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
       document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
@@ -2255,12 +2280,12 @@
 
     document.getElementById("tap-btn").addEventListener("click", () => {
       updatePassiveEnergy();
-      if (Math.floor(state.energy) <= 0) {
-        showToast("Sin energía. Espera a que recargue.");
+      if (Math.floor(state.energy) < ENERGY_COST_PER_TAP) {
+        showToast(`Necesitas al menos ${ENERGY_COST_PER_TAP} de energía. Llena en 6 horas.`);
         return;
       }
       const gain = getTapGain();
-      state.energy = Math.max(0, Number((state.energy - 1).toFixed(2)));
+      state.energy = Math.max(0, Number((state.energy - ENERGY_COST_PER_TAP).toFixed(4)));
       state.coins += gain;
       spawnFloatingGain(gain);
       haptic("light");
