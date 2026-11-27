@@ -876,7 +876,7 @@
   <script>
     const BOT_USERNAME = "cripto_game_breaking_bot";
     const SUPPORT_CHAT_URL = "https://t.me/Cripto_Game0";
-    const WEBHOOK_REPORT_URL = "";
+    const WEBHOOK_REPORT_URL = "https://autumn-band-e48ecripto-game-reportes.carlosmanueldelarosa010.workers.dev";
     const WALLETS = {
       "USDT-TON": "UQBlZ_oqw1P2k0TPqu309xsbhpeMqEHXd3YyWHaa5nUzQRC7",
       "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
@@ -960,7 +960,7 @@
       const rawName = (tgUser?.username || tgUser?.first_name || "JUGADOR")
         .toString()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[̀-ͯ]/g, "")
         .replace(/[^a-zA-Z0-9]/g, "")
         .toUpperCase()
         .slice(0, 8) || "JUGADOR";
@@ -1173,24 +1173,33 @@
       return `${SUPPORT_CHAT_URL}?text=${encoded}`;
     }
 
-    function sendDirectToSupport(messageText = "", toastMsg = "Abriendo chat de soporte...") {
-      if (WEBHOOK_REPORT_URL && messageText) {
+    async function sendDirectToSupport(messageText = "", toastMsg = "Abriendo chat de soporte...") {
+      const clean = (messageText || "").trim();
+
+      if (WEBHOOK_REPORT_URL && clean) {
         try {
-          fetch(WEBHOOK_REPORT_URL, {
+          const resp = await fetch(WEBHOOK_REPORT_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               playerId,
               username: tgUser?.username || "",
               firstName: tgUser?.first_name || "Jugador",
-              report: messageText,
+              report: clean,
               supportChat: SUPPORT_CHAT_URL,
               timestamp: Date.now()
             })
-          }).catch(() => {});
+          });
+
+          const data = await resp.json().catch(() => null);
+          if (resp.ok && data && data.ok) {
+            showToast("Reporte enviado automáticamente al canal de soporte");
+            return;
+          }
         } catch {}
       }
-      const targetUrl = buildSupportChatUrl(messageText);
+
+      const targetUrl = buildSupportChatUrl(clean);
       openTelegramLink(targetUrl);
       showToast(toastMsg);
     }
