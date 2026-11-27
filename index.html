@@ -285,6 +285,7 @@
       padding: 12px;
       line-height: 1.45;
       margin-bottom: 12px;
+      white-space: pre-line;
     }
 
     .lock-box {
@@ -878,11 +879,11 @@
       <div class="card">
         <div class="card-title">Retirar saldo real verificado</div>
         <div class="card-desc">
-          Mínimo de retiro: <strong>$10.00 USDT</strong>. Los retiros tardan de <strong>30 minutos hasta 12 horas</strong> en completarse según cuántas solicitudes de retiro estén pendientes antes que la tuya.
+          Mínimo de retiro: <strong>$10.00 USDT</strong>. Los retiros tardan de <strong>30 minutos hasta 12 horas</strong> en completarse porque se atienden en orden de llegada según cuántas solicitudes de retiro estén pendientes antes que la tuya.
         </div>
 
         <div class="notice">
-          <strong>Tiempo estimado de entrega:</strong> de <strong>30 minutos a 12 horas</strong>, dependiendo de cuántas solicitudes de retiro estén pendientes antes que tu solicitud.
+          <strong>Tiempo de procesamiento:</strong> los retiros tardan entre <strong>30 minutos y 12 horas</strong> en completarse. Este tiempo varía porque se procesan en fila y depende de cuántas solicitudes de retiro estén pendientes antes que la tuya.
         </div>
 
         <div class="stats-grid" style="margin-bottom:12px;">
@@ -918,11 +919,8 @@
           Solicitar retiro
         </button>
 
-        <div id="withdraw-result-box" class="ref-box" style="display:none; margin-top:12px;">
+        <div id="withdraw-result-box" class="warn-box" style="display:none; margin-top:12px; margin-bottom:0;">
           <div id="withdraw-result-details"></div>
-          <button id="btn-send-withdraw-tg" class="btn btn-warn" type="button" style="width:100%; margin-top:10px;">
-            Abrir chat de soporte con folio de retiro
-          </button>
         </div>
       </div>
 
@@ -964,7 +962,6 @@
       minCommissionPercent: 6.0
     };
 
-    // Energía máxima aumenta al subir de rango (no de nivel) y el tiempo de llenado sube por rango
     const REFERRAL_RANKS = [
       { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    fillSeconds: 60,   rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
       { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 100,  fillSeconds: 95,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
@@ -1224,7 +1221,6 @@
       const rank = getCurrentReferralRank();
       const prevMax = state.maxEnergy || 100;
 
-      // Energía aumenta exclusivamente según el rango del usuario
       state.maxEnergy = 100 + (Number(rank.energyBonus) || 0);
 
       if (state.maxEnergy > prevMax) {
@@ -1332,28 +1328,28 @@
         if (!silent && data?.error) showToast(data.error);
         return;
       }
-      if (typeof data.verifiedRealBalanceUsdt === "number") {
-        state.verifiedRealBalanceUsdt = Math.max(0, Number(data.verifiedRealBalanceUsdt));
+      if (typeof data.verifiedRealBalanceUsdt !== "undefined") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(data.verifiedRealBalanceUsdt) || 0);
       }
-      if (typeof data.verifiedReferralCount === "number") {
-        state.verifiedReferralCount = Math.max(0, Number(data.verifiedReferralCount));
+      if (typeof data.verifiedReferralCount !== "undefined") {
+        state.verifiedReferralCount = Math.max(0, Number(data.verifiedReferralCount) || 0);
       }
-      if (typeof data.verifiedFundedReferralCount === "number") {
-        state.verifiedFundedReferralCount = Math.max(0, Number(data.verifiedFundedReferralCount));
+      if (typeof data.verifiedFundedReferralCount !== "undefined") {
+        state.verifiedFundedReferralCount = Math.max(0, Number(data.verifiedFundedReferralCount) || 0);
       }
-      if (typeof data.verifiedWeeklyReferralCount === "number") {
-        state.verifiedWeeklyReferralCount = Math.max(0, Number(data.verifiedWeeklyReferralCount));
+      if (typeof data.verifiedWeeklyReferralCount !== "undefined") {
+        state.verifiedWeeklyReferralCount = Math.max(0, Number(data.verifiedWeeklyReferralCount) || 0);
       }
-      if (typeof data.influencerEarnedUsdt === "number") {
-        state.influencerEarnedUsdt = Math.max(0, Number(data.influencerEarnedUsdt));
+      if (typeof data.influencerEarnedUsdt !== "undefined") {
+        state.influencerEarnedUsdt = Math.max(0, Number(data.influencerEarnedUsdt) || 0);
       }
-      if (typeof data.influencerWithdrawalsCount === "number") {
-        state.influencerWithdrawalsCount = Math.max(0, Number(data.influencerWithdrawalsCount));
+      if (typeof data.influencerWithdrawalsCount !== "undefined") {
+        state.influencerWithdrawalsCount = Math.max(0, Number(data.influencerWithdrawalsCount) || 0);
       }
-      if (typeof data.influencerCommissionRate === "number") {
+      if (typeof data.influencerCommissionRate !== "undefined") {
         state.influencerCommissionRate = Math.max(
           INFLUENCER_REQUIREMENTS.minCommissionPercent,
-          Number(data.influencerCommissionRate)
+          Number(data.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
         );
       }
       if (data.redeemedReferralCode) {
@@ -2236,7 +2232,6 @@
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // Referidos
     let lastInfluencerReportText = "";
 
     async function applyReferralCode(rawCode, fromStartParam = false) {
@@ -2369,7 +2364,6 @@
       applyReferralCode(startParam, true);
     }
 
-    // Recarga de saldo real: copiar billetera, bloquear botón, subir captura, mostrar procesando o rechazo/aprobación
     document.getElementById("btn-copy-deposit-wallet").addEventListener("click", () => {
       const addr = state.pendingDeposit?.walletAddress || "";
       if (addr) copyText(addr, "Dirección de billetera copiada");
@@ -2547,7 +2541,6 @@
       showToast(`+$${credited.toFixed(2)} acreditados a tu Saldo real verificado`);
     });
 
-    // Comprar boost con saldo real verificado
     document.getElementById("btn-buy-boost-with-balance").addEventListener("click", async () => {
       syncRankAndBoostBenefits();
       const rank = getCurrentReferralRank();
@@ -2607,7 +2600,6 @@
       showToast(`+${addBoost.toFixed(1)}x acumulado`);
     });
 
-    // Billetera y canje de monedas
     let lastRedeemRequestText = "";
 
     function saveWalletAddress(rawAddr, rawNet) {
@@ -2693,8 +2685,21 @@
       sendDirectToSupport(lastRedeemRequestText, "Abriendo chat de soporte...");
     });
 
-    // Retirar saldo real verificado (mínimo $10, estado Procesando hasta /completar_ret)
-    let lastWithdrawRequestText = "";
+    function buildWithdrawQueueMessage(withdrawRef, amount, queuePos) {
+      const aheadCount = Math.max(0, (Number(queuePos) || 1) - 1);
+      const aheadText =
+        aheadCount === 0
+          ? "No tienes solicitudes de retiro pendientes delante de la tuya."
+          : aheadCount === 1
+            ? "Hay 1 solicitud de retiro pendiente antes que la tuya."
+            : `Hay ${aheadCount} solicitudes de retiro pendientes antes que la tuya.`;
+
+      return (
+        `Tu solicitud ${withdrawRef} por $${Number(amount).toFixed(2)} USDT está en estado PROCESANDO.\n` +
+        `Número que te toca en la cola: #${queuePos}. ${aheadText}\n` +
+        `Tiempo estimado: los retiros tardan de 30 minutos hasta 12 horas en completarse porque se atienden en orden y dependen de cuántas solicitudes estén pendientes antes que la tuya.`
+      );
+    }
 
     document.getElementById("btn-submit-real-withdraw").addEventListener("click", async () => {
       if (!hasValidWallet()) {
@@ -2727,6 +2732,8 @@
       }
 
       const withdrawRef = res.withdrawId || `RET-${Date.now().toString().slice(-6)}`;
+      const queuePos = Number(res.queuePosition || res.withdraw?.queuePosition || 1);
+
       if (typeof res.verifiedRealBalanceUsdt === "number") {
         state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
       } else {
@@ -2740,9 +2747,11 @@
         payoutNetwork: state.payoutNetwork,
         payoutAddress: state.payoutAddress.trim(),
         status: "processing",
-        queuePosition: res.queuePosition || 1,
+        queuePosition: queuePos,
         createdAt: Date.now()
       };
+      newEntry.queuePosition = queuePos;
+
       state.withdrawHistory = Array.isArray(state.withdrawHistory) ? state.withdrawHistory : [];
       state.withdrawHistory.unshift(newEntry);
       state.withdrawHistory = state.withdrawHistory.slice(0, 25);
@@ -2751,19 +2760,11 @@
       render();
       haptic("heavy");
 
-      lastWithdrawRequestText =
-        `Folio de retiro: ${withdrawRef} | Usuario: ${playerId} | Monto: $${amount.toFixed(2)} USDT | Red: ${state.payoutNetwork} | Destino: ${state.payoutAddress.trim()}`;
-
-      document.getElementById("withdraw-result-details").textContent =
-        `Solicitud ${withdrawRef} en estado PROCESANDO por $${amount.toFixed(2)} USDT (Cola #${newEntry.queuePosition || 1}). ` +
-        `Los retiros tardan de 30 minutos hasta 12 horas según las solicitudes pendientes antes que la tuya.`;
+      const detailsEl = document.getElementById("withdraw-result-details");
+      detailsEl.textContent = buildWithdrawQueueMessage(withdrawRef, amount, queuePos);
       document.getElementById("withdraw-result-box").style.display = "block";
       document.getElementById("withdraw-amount-input").value = "";
-      showToast(`Retiro ${withdrawRef} en estado Procesando`);
-    });
-
-    document.getElementById("btn-send-withdraw-tg").addEventListener("click", () => {
-      sendDirectToSupport(lastWithdrawRequestText, "Abriendo chat de soporte...");
+      showToast(`Retiro ${withdrawRef} en cola #${queuePos} (Procesando)`);
     });
 
     async function copyText(text, okMsg) {
