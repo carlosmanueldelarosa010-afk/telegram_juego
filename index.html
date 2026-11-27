@@ -1156,14 +1156,12 @@
     }
 
     function getRefillDurationSeconds() {
-      // En Nivel 1 o en rangos Novato hasta Gerente 2: 1 hora 30 minutos (5400s)
       if (getPlayerLevel() <= 1) return 5400;
       const rank = getCurrentReferralRank();
       return Number(rank.refillSeconds) || 5400;
     }
 
     function getTapEnergyCost() {
-      // En Nivel 1 o en rangos Novato hasta Gerente 2: 1 de energía por toque
       if (getPlayerLevel() <= 1) return 1;
       const rank = getCurrentReferralRank();
       return Math.max(1, Math.min(10, Number(rank.tapEnergyCost) || 1));
@@ -1473,9 +1471,9 @@
     function getTapGain() {
       const rank = getCurrentReferralRank();
       const capByRank = Number(rank.maxTapCoins) || 45;
-      const raw = Math.round(
-        (getEffectiveTapLevel() * 1.4) * (1 + (Math.min(MAX_TOTAL_BOOST_CAP, state.productivityMultiplier) - 1) * 0.12)
-      );
+      const activeBoost = Math.min(MAX_TOTAL_BOOST_CAP, Math.max(1.0, Number(state.productivityMultiplier) || 1.0));
+      const baseTap = getEffectiveTapLevel() * 1.4;
+      const raw = Math.round(baseTap * activeBoost);
       return Math.max(1, Math.min(capByRank, 100, raw));
     }
 
@@ -2255,7 +2253,8 @@
 
       const tapCost = getTapUpgradeCost();
       const boostGateActive = isBoostRequiredBeforeNextLevel();
-      document.getElementById("tap-lvl").textContent = `${effectiveTap} (Jugador Nv. ${playerLevel} · máx. toque ${rank.maxTapCoins})`;
+      document.getElementById("tap-lvl").textContent =
+        `${effectiveTap} (Jugador Nv. ${playerLevel} · Boost x${totalBoostCapped.toFixed(1)} · máx. toque ${rank.maxTapCoins})`;
       document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
       document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
       document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
