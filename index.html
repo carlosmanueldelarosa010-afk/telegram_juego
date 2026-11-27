@@ -1,131 +1,2264 @@
-export default {
-  async fetch(request, env) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cripto GAME</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card: #131b2e;
+      --card-2: #1a243d;
+      --text: #f3f6fc;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-2: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0 0 84px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+
+    .avatar-img, .avatar-fallback {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(59, 130, 246, 0.45);
+      background: var(--card-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #93c5fd;
+    }
+
+    .avatar-edit-btn {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      background: var(--accent);
+      color: #fff;
+      border: 2px solid var(--card);
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 5px;
+      cursor: pointer;
+    }
+
+    .app-name { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+    .user-info { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .header-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      background: rgba(59, 130, 246, 0.16);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge-lvl {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+    .stats-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .sub-rate-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .stat-box.compact {
+      background: var(--card-2);
+      border-radius: 12px;
+      padding: 9px;
+    }
+    .stat-box.clickable {
+      cursor: pointer;
+      border-color: rgba(16, 185, 129, 0.35);
+      transition: transform 0.1s ease, border-color 0.15s ease;
+    }
+    .stat-box.clickable:active { transform: scale(0.98); }
+    .stat-box.clickable:hover { border-color: rgba(16, 185, 129, 0.7); }
+    .stat-label { font-size: 12px; color: var(--muted); }
+    .stat-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .stat-value.sm { font-size: 15px; }
+
+    .tap-area {
+      position: relative;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 16px;
+      text-align: center;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .tap-stage {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .tap-btn {
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      border: 4px solid rgba(59, 130, 246, 0.45);
+      background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 65%, #1d4ed8);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+      transition: transform 0.08s ease;
+    }
+    .tap-btn:active { transform: scale(0.94); }
+    .tap-btn.tap-pulse { animation: tapPulse 0.18s ease; }
+
+    @keyframes tapPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.93); }
+      100% { transform: scale(1); }
+    }
+
+    .float-gain {
+      position: absolute;
+      font-size: 18px;
+      font-weight: 800;
+      color: #6ee7b7;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.65);
+      pointer-events: none;
+      animation: floatUp 0.7s ease-out forwards;
+      z-index: 5;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.95); }
+      100% { opacity: 0; transform: translate(-50%, -68px) scale(1.12); }
+    }
+
+    .energy-wrap { margin-top: 18px; text-align: left; }
+    .energy-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .bar-bg { width: 100%; height: 10px; background: var(--card-2); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.2s ease; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 15px; font-weight: 700; margin: 0 0 6px 0; }
+    .card-desc { font-size: 13px; color: var(--muted); margin: 0 0 12px 0; line-height: 1.4; }
+
+    .row-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+    }
+    .btn.sm { padding: 7px 10px; font-size: 11px; border-radius: 10px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-green { background: var(--accent-2); }
+    .btn-warn { background: var(--warn); color: #111827; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+    select, input, textarea {
+      width: 100%;
+      background: var(--card-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      user-select: text;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 64px;
+    }
+
+    .notice {
+      font-size: 12px;
+      color: #cbd5e1;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 10px 12px;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .ok-box {
+      font-size: 12px;
+      color: #6ee7b7;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .lock-box {
+      font-size: 12px;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .req-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 12px;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .req-ok { color: #6ee7b7; font-weight: 700; flex-shrink: 0; }
+    .req-no { color: #fca5a5; font-weight: 700; flex-shrink: 0; }
+
+    .ref-box {
+      background: var(--card-2);
+      border: 1px dashed rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 12px;
+      word-break: break-all;
+      color: #cbd5e1;
+      margin-bottom: 10px;
+    }
+
+    .code-pill {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      color: #93c5fd;
+    }
+
+    .rank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .rank-row.me {
+      border-color: rgba(59, 130, 246, 0.55);
+      background: rgba(59, 130, 246, 0.14);
+    }
+
+    .tier-item {
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 11px;
+      margin-bottom: 7px;
+      font-size: 12px;
+    }
+
+    .tier-item.active-tier {
+      border-color: rgba(16, 185, 129, 0.55);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(19, 27, 46, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      padding: 8px 2px;
+      z-index: 20;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 6px 2px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .nav-btn.active { color: #fff; background: rgba(59, 130, 246, 0.2); }
+
+    .toast {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.16);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 50;
+      display: none;
+      max-width: 90%;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+  <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" />
+
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <div class="avatar-wrap">
+          <img id="avatar-img" class="avatar-img" style="display:none;" alt="Foto de perfil" />
+          <div id="avatar-fallback" class="avatar-fallback">CG</div>
+          <button id="btn-change-avatar" class="avatar-edit-btn" type="button">Foto</button>
+        </div>
+        <div style="min-width:0;">
+          <div class="app-name">Cripto Game</div>
+          <div id="user-name" class="user-info">Jugador</div>
+          <div id="ref-info" class="user-sub">Rango: Novato</div>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div id="player-level-badge" class="badge badge-lvl">Nivel 1</div>
+        <div id="boost-badge" class="badge">Boost: x1.0</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">Monedas del juego</div>
+        <div id="coins-val" class="stat-value">0</div>
+      </div>
+      <div id="real-balance-card" class="stat-box clickable" title="Toca para retirar tu saldo real">
+        <div class="stat-label">Saldo real verificado</div>
+        <div id="real-balance-val" class="stat-value" style="color:#6ee7b7;">$0.00</div>
+      </div>
+    </div>
+
+    <div class="sub-rate-bar">
+      <span>Producción de Rigs</span>
+      <strong id="rate-val" style="color:#6ee7b7;">0/h</strong>
+    </div>
+
+    <!-- PESTAÑA 1: JUEGO -->
+    <section id="tab-game" class="tab-content active">
+      <div class="tap-area">
+        <div id="tap-stage" class="tap-stage">
+          <button id="tap-btn" class="tap-btn" type="button">TOCAR<br/>+<span id="tap-power">1</span></button>
+        </div>
+        <div class="energy-wrap">
+          <div class="energy-top">
+            <span>Energía (se recarga incluso fuera del bot)</span>
+            <span id="energy-text">100 / 100</span>
+          </div>
+          <div class="bar-bg">
+            <div id="energy-bar" class="bar-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mejora de toque</div>
+        <div class="card-desc">Aumenta las monedas base por toque y suma nivel. Cada nivel requiere más monedas.</div>
+        <div class="row-between">
+          <div>
+            <div>Nivel de toque: <strong id="tap-lvl">1</strong></div>
+            <div class="user-sub">Costo: <span id="tap-cost">50</span> monedas</div>
+          </div>
+          <button id="btn-upgrade-tap" class="btn" type="button">Mejorar</button>
+        </div>
+        <div id="lvl12-boost-gate" class="lock-box" style="display:none; margin-top:12px; margin-bottom:0;">
+          <div>Para subir al <strong>Nivel 12</strong> debes activar al menos <strong>1 Boost</strong> primero.</div>
+          <button id="btn-go-boost-gate" class="btn btn-warn" type="button" style="width:100%; margin-top:8px;">
+            Ir a Boost y Saldo
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 2: RIGS -->
+    <section id="tab-rigs" class="tab-content">
+      <div class="card">
+        <div class="card-title">Acumulador de Rigs (tope 6h)</div>
+        <div class="card-desc">
+          Acumula monedas automáticamente incluso cuando estás fuera del bot (hasta un máximo de 6 horas). El límite de compra de cada Rig sube con tu rango de referidos.
+        </div>
+        <div class="row-between">
+          <div>
+            <div class="user-sub">Pendiente por reclamar</div>
+            <div id="pending-coins" class="stat-value" style="font-size:22px; margin-top:2px;">0</div>
+          </div>
+          <button id="btn-claim" class="btn btn-green" type="button">Reclamar</button>
+        </div>
+      </div>
+
+      <div id="rigs-list"></div>
+    </section>
+
+    <!-- PESTAÑA 3: BOOST CRIPTO Y RECARGA DE SALDO REAL -->
+    <section id="tab-crypto" class="tab-content">
+      <div class="card">
+        <div class="card-title">Recargar saldo real (USDT)</div>
+        <div class="card-desc">
+          Ingresa el monto exacto que deseas recargar y envíalo al chat de soporte junto con tu captura.
+        </div>
+
+        <label class="user-sub" for="deposit-usdt-input">Monto a recargar (USDT)</label>
+        <input id="deposit-usdt-input" type="number" min="1" step="0.01" placeholder="Ej. 10.00" />
+
+        <label class="user-sub" for="deposit-wallet-network">Red de billetera</label>
+        <select id="deposit-wallet-network">
+          <option value="USDT-TON">USDT (Red TON)</option>
+          <option value="USDT-TRC20">USDT (Red TRC20)</option>
+        </select>
+
+        <button id="btn-generate-deposit" class="btn btn-green" type="button" style="width:100%;">Generar recarga y abrir soporte</button>
+
+        <div id="deposit-real-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div><strong>Monto a enviar:</strong> <span id="real-dep-amount">-</span> USDT (<span id="real-dep-net">-</span>)</div>
+          <div style="margin-top:6px;"><strong>Billetera destino:</strong></div>
+          <div id="real-dep-address" style="margin-top:3px;">-</div>
+          <div id="auto-report-status" class="user-sub" style="margin-top:6px; color:#6ee7b7;"></div>
+          <div style="margin-top:10px;">
+            <button id="btn-send-real-dep-tg" class="btn btn-warn" type="button" style="width:100%;">Abrir chat de soporte con captura</button>
+          </div>
+        </div>
+
+        <button id="btn-direct-support-tab" class="btn btn-outline" type="button" style="width:100%; margin-top:10px;">
+          Abrir chat de soporte directo
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Acreditar recarga aprobada a Saldo real</div>
+        <div class="card-desc">
+          Ingresa el código emitido por el servidor/soporte. El monto se valida y acredita directamente en el servidor.
+        </div>
+        <input id="deposit-credit-code-input" type="text" placeholder="Pega aquí tu código de acreditación" autocomplete="off" />
+        <button id="btn-apply-deposit-credit" class="btn btn-green" type="button" style="width:100%;">
+          Validar y acreditar saldo real
+        </button>
+        <div id="deposit-credit-status" class="user-sub" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Comprar Boost con Saldo real</div>
+        <div class="card-desc">
+          Los boosts que compres se <strong>acumulan</strong>, tu boost total <strong>nunca baja</strong> y el límite comprable sube según tu rango de referidos (desde <strong>5.0x</strong> hasta <strong>20.0x</strong>).
+        </div>
+        <div id="boost-count" class="user-sub" style="margin-bottom:4px;"></div>
+        <div id="boost-limit-info" class="user-sub" style="margin-bottom:4px; color:#93c5fd;"></div>
+        <div id="boost-real-balance-info" class="user-sub" style="margin-bottom:10px; color:#6ee7b7;"></div>
+
+        <label class="user-sub" for="boost-pack">Paquete de productividad</label>
+        <select id="boost-pack">
+          <option value="1.5" data-price="5.99">Boost +1.5x de productividad — $5.99</option>
+          <option value="2.0" data-price="10.99">Boost +2.0x de productividad — $10.99</option>
+          <option value="3.0" data-price="17.99">Boost +3.0x de productividad — $17.99</option>
+          <option value="4.0" data-price="25.99">Boost +4.0x de productividad — $25.99</option>
+          <option value="6.0" data-price="45.99">Boost +6.0x de productividad — $45.99</option>
+          <option value="8.0" data-price="59.99">Boost +8.0x de productividad — $59.99</option>
+          <option value="10.0" data-price="74.99">Boost +10.0x de productividad — $74.99</option>
+          <option value="15.0" data-price="99.99">Boost +15.0x de productividad — $99.99</option>
+        </select>
+
+        <button id="btn-buy-boost-with-balance" class="btn" type="button" style="width:100%;">
+          Comprar boost con saldo real
+        </button>
+
+        <div id="boost-purchase-status" class="ref-box" style="display:none; margin-top:12px;"></div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 4: REFERIDOS -->
+    <section id="tab-referrals" class="tab-content">
+      <div class="card">
+        <div class="card-title">Tu código automático de invitación</div>
+        <div class="card-desc">
+          Generado según tu cuenta. Compártelo para sumar referidos verificados y subir de rango.
+        </div>
+
+        <div class="ref-box">
+          <div class="user-sub">Tu código de referido</div>
+          <div id="my-referral-code" class="code-pill" style="margin-top:4px;">-</div>
+          <div id="my-invite-link" class="user-sub" style="margin-top:6px; word-break:break-all;">-</div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:10px;">
+          <div class="stat-box">
+            <div class="stat-label">Invitados verificados</div>
+            <div id="ref-count-val" class="stat-value">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Invitados semana</div>
+            <div id="ref-weekly-count-val" class="stat-value">0</div>
+          </div>
+        </div>
+
+        <div id="ref-progress-text" class="user-sub" style="margin-bottom:10px;">
+          Faltan 10 invitados verificados para tu próximo boost extra de +1.0x.
+        </div>
+
+        <div class="row-between">
+          <button id="btn-copy-ref-code" class="btn btn-outline" type="button">Copiar código</button>
+          <button id="btn-share-ref-tg" class="btn" type="button">Invitar en Telegram</button>
+        </div>
+        <button id="btn-register-code-tg" class="btn btn-warn" type="button" style="width:100%; margin-top:8px;">
+          Enviar mi código a soporte
+        </button>
+      </div>
+
+      <!-- PROGRAMA DE INFLUENCER (50 REFERIDOS VERIFICADOS + 25 CON RECARGA REAL VERIFICADA -> MÍN. 6% POR RETIROS VERIFICADOS) -->
+      <div class="card">
+        <div class="card-title">Programa Influencer (mín. 6% por retiros verificados)</div>
+        <div class="card-desc">
+          Al alcanzar <strong>50 referidos verificados</strong> y <strong>25 referidos con recarga real verificada</strong>, puedes solicitar acceso como <strong>Influencer</strong>. Las comisiones (mínimo <strong>6%</strong>) se acreditan automáticamente desde el servidor cuando un referido complete un retiro real.
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-box compact">
+            <div class="stat-label">Referidos verificados</div>
+            <div id="inf-counter-refs" class="stat-value sm">0 / 50</div>
+          </div>
+          <div class="stat-box compact">
+            <div class="stat-label">Con recarga verificada</div>
+            <div id="inf-counter-funded" class="stat-value sm" style="color:#6ee7b7;">0 / 25</div>
+          </div>
+        </div>
+
+        <div class="req-item">
+          <span>1. Referidos verificados: <strong>50 requeridos</strong> (Actual: <span id="inf-req-refs-current">0</span>)</span>
+          <span id="inf-req-refs-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div class="req-item">
+          <span>2. Referidos con recarga verificada: <strong>25 requeridos</strong> (Actual: <span id="inf-req-funded-current">0</span>)</span>
+          <span id="inf-req-funded-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div id="influencer-lock-box" class="lock-box"></div>
+
+        <div id="influencer-unlocked-panel" style="display:none;">
+          <div id="influencer-status-banner" class="ok-box">
+            Requisitos verificados: puedes enviar tu solicitud de Influencer y revisar tus comisiones acreditadas por retiros reales de referidos.
+          </div>
+
+          <form id="influencer-application-form">
+            <label class="user-sub" for="inf-handle-input">Nombre o @usuario en Telegram</label>
+            <input id="inf-handle-input" type="text" placeholder="Ej. @tunombre o Carlos" required />
+
+            <label class="user-sub" for="inf-platform-select">Plataforma principal</label>
+            <select id="inf-platform-select">
+              <option value="TikTok">TikTok</option>
+              <option value="YouTube">YouTube</option>
+              <option value="Telegram">Canal / Grupo de Telegram</option>
+              <option value="Instagram / X">Instagram / X</option>
+            </select>
+
+            <label class="user-sub" for="inf-link-input">Enlace de tu canal, perfil o comunidad</label>
+            <input id="inf-link-input" type="url" placeholder="https://..." required />
+
+            <label class="user-sub" for="inf-commission-pct-input">Comisión solicitada por retiro de referidos (mínimo 6%)</label>
+            <input id="inf-commission-pct-input" type="number" min="6" max="50" step="0.5" value="6" required />
+
+            <label class="user-sub" for="inf-notes-input">Notas adicionales para soporte</label>
+            <textarea id="inf-notes-input" placeholder="Cuéntanos cómo promocionarás Cripto Game..."></textarea>
+
+            <button id="btn-submit-influencer-form" type="submit" class="btn btn-green" style="width:100%;">
+              Enviar solicitud de Influencer
+            </button>
+          </form>
+
+          <div id="influencer-submitted-box" class="ref-box" style="display:none; margin-top:12px;">
+            <div id="influencer-submitted-details"></div>
+            <button id="btn-send-influencer-tg" type="button" class="btn btn-warn" style="width:100%; margin-top:8px;">
+              Abrir chat de soporte con mi solicitud
+            </button>
+          </div>
+
+          <div class="card" style="margin-top:12px; margin-bottom:0; background:var(--card-2);">
+            <div class="card-title">Registro de comisiones por retiros de referidos (mín. 6%)</div>
+            <div class="card-desc" style="margin-bottom:10px;">
+              Actualizado desde el servidor cada vez que un referido retira saldo real verificado.
+            </div>
+
+            <div class="stats-grid-3">
+              <div class="stat-box compact" style="background:var(--card);">
+                <div class="stat-label">Comisión</div>
+                <div id="inf-active-rate-label" class="stat-value sm" style="color:#6ee7b7;">6.0%</div>
+              </div>
+              <div class="stat-box compact" style="background:var(--card);">
+                <div class="stat-label">Ganado</div>
+                <div id="inf-earned-total-label" class="stat-value sm" style="color:#6ee7b7;">$0.00</div>
+              </div>
+              <div class="stat-box compact" style="background:var(--card);">
+                <div class="stat-label">Retiros ref.</div>
+                <div id="inf-withdrawals-count-label" class="stat-value sm" style="color:#93c5fd;">0</div>
+              </div>
+            </div>
+
+            <button id="btn-refresh-influencer-commissions" type="button" class="btn btn-outline" style="width:100%;">
+              Sincronizar comisiones desde servidor
+            </button>
+            <div id="inf-commission-log" class="user-sub" style="margin-top:8px; color:#93c5fd;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Canjear código de invitación (1 por usuario)</div>
+        <div class="card-desc">
+          Solo puedes canjear <strong>1 código</strong> en toda tu cuenta. El canje y la cadena de referidos se registran en el servidor.
+        </div>
+
+        <div id="redeemed-ref-status" class="notice" style="margin-bottom:10px;">
+          Estado: aún no has canjeado ningún código.
+        </div>
+
+        <input id="input-referral-code" type="text" placeholder="Escribe el código de invitación (Ej. CARLOS-4821)" autocomplete="off" />
+        <button id="btn-apply-referral-code" class="btn btn-green" type="button" style="width:100%;">
+          Canjear código de invitación
+        </button>
+
+        <div id="referral-chain-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="referral-chain-details"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tu rango y beneficios por invitados</div>
+        <div id="current-rank-summary" class="notice" style="margin-bottom:10px;"></div>
+        <div id="ranks-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Top 10 Semanal de Invitaciones</div>
+        <div id="weekly-reset-info" class="card-desc">
+          Se actualiza todos los domingos a las 12:00 a. m. (00:00).
+        </div>
+        <div id="weekly-leaderboard-list"></div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 5: CANJEAR MONEDAS -->
+    <section id="tab-redeem" class="tab-content">
+      <div class="card">
+        <div class="card-title">Requisitos obligatorios para canjear monedas</div>
+        <div class="card-desc">
+          Para desbloquear el canje de tus monedas acumuladas debes cumplir ambos pasos:
+        </div>
+
+        <div class="req-item">
+          <span>1. Nivel mínimo requerido: <strong>Nivel 12</strong> (Actual: <span id="req-lvl-current">1</span>)</span>
+          <span id="req-lvl-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div class="req-item">
+          <span>2. Dirección de criptomonedas registrada</span>
+          <span id="req-wallet-status" class="req-no">Pendiente</span>
+        </div>
+
+        <div id="redeem-lock-notice" class="lock-box"></div>
+
+        <label class="user-sub" for="payout-network">Red de tu billetera para recibir la recompensa</label>
+        <select id="payout-network">
+          <option value="USDT-TON">USDT (Red TON)</option>
+          <option value="USDT-TRC20">USDT (Red TRC20)</option>
+        </select>
+
+        <label class="user-sub" for="payout-address-input">Tu dirección de criptomonedas (obligatoria)</label>
+        <input id="payout-address-input" type="text" placeholder="Pega aquí tu dirección TON o TRC20" autocomplete="off" />
+        <button id="btn-save-wallet" class="btn btn-outline" type="button" style="width:100%; margin-bottom:10px;">
+          Guardar dirección de retiro
+        </button>
+      </div>
+
+      <div id="redeem-action-card" class="card" style="display:none;">
+        <div class="card-title">Opciones de canje de monedas</div>
+        <div class="card-desc">
+          Selecciona uno de los paquetes disponibles para canjear tus monedas acumuladas.
+        </div>
+
+        <label class="user-sub" for="redeem-tier-select">Elige paquete de canje</label>
+        <select id="redeem-tier-select">
+          <option value="10000" data-reward="5">10,000 monedas — $5</option>
+          <option value="25000" data-reward="10">25,000 monedas — $10</option>
+          <option value="40000" data-reward="15">40,000 monedas — $15</option>
+          <option value="80000" data-reward="25">80,000 monedas — $25</option>
+        </select>
+
+        <div id="selected-tier-info" class="user-sub" style="margin-bottom:10px;"></div>
+
+        <button id="btn-submit-coin-redeem" class="btn btn-green" type="button" style="width:100%;">
+          Solicitar canje
+        </button>
+
+        <div id="coin-redeem-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="coin-redeem-details"></div>
+          <button id="btn-send-redeem-tg" class="btn btn-warn" type="button" style="width:100%; margin-top:10px;">
+            Enviar comprobante a soporte en Telegram
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PESTAÑA 6: RETIRAR SALDO REAL -->
+    <section id="tab-withdraw" class="tab-content">
+      <div class="card">
+        <div class="card-title">Retirar saldo real verificado</div>
+        <div class="card-desc">
+          Las solicitudes de retiro se validan contra tu <strong>Saldo real verificado</strong> en el servidor antes de procesarse.
+        </div>
+
+        <div class="stats-grid" style="margin-bottom:12px;">
+          <div class="stat-box">
+            <div class="stat-label">Saldo real verificado</div>
+            <div id="withdraw-available-val" class="stat-value" style="color:#6ee7b7;">$0.00</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Red destino</div>
+            <div id="withdraw-net-val" class="stat-value" style="font-size:15px;">USDT-TON</div>
+          </div>
+        </div>
+
+        <div class="ref-box">
+          <div class="user-sub">Billetera registrada para retiro</div>
+          <div id="withdraw-wallet-display" style="margin-top:4px; font-weight:700;">Sin billetera registrada</div>
+        </div>
+
+        <div id="withdraw-wallet-lock" class="lock-box" style="display:none;">
+          Debes registrar y guardar tu dirección de criptomonedas antes de retirar.
+        </div>
+
+        <label class="user-sub" for="withdraw-address-quick-input">Actualizar dirección de retiro</label>
+        <input id="withdraw-address-quick-input" type="text" placeholder="Pega aquí tu dirección TON o TRC20" autocomplete="off" />
+        <button id="btn-save-wallet-from-withdraw" class="btn btn-outline" type="button" style="width:100%; margin-bottom:12px;">
+          Guardar billetera para retiro
+        </button>
+
+        <label class="user-sub" for="withdraw-amount-input">Monto a retirar (USDT)</label>
+        <input id="withdraw-amount-input" type="number" min="1" step="0.01" placeholder="Ej. 5.00" />
+
+        <button id="btn-submit-real-withdraw" class="btn btn-green" type="button" style="width:100%;">
+          Solicitar retiro verificado
+        </button>
+
+        <div id="withdraw-result-box" class="ref-box" style="display:none; margin-top:12px;">
+          <div id="withdraw-result-details"></div>
+          <button id="btn-send-withdraw-tg" class="btn btn-warn" type="button" style="width:100%; margin-top:10px;">
+            Abrir chat de soporte con folio de retiro
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-game" type="button">Juego</button>
+    <button class="nav-btn" data-tab="tab-rigs" type="button">Rigs</button>
+    <button class="nav-btn" data-tab="tab-crypto" type="button">Boost</button>
+    <button class="nav-btn" data-tab="tab-referrals" type="button">Referidos</button>
+    <button class="nav-btn" data-tab="tab-redeem" type="button">Canjear</button>
+    <button class="nav-btn" data-tab="tab-withdraw" type="button">Retirar</button>
+  </nav>
+
+  <script>
+    const BOT_USERNAME = "cripto_game_breaking_bot";
+    const SUPPORT_CHAT_URL = "https://t.me/Cripto_Game0";
+    // Configura aquí la URL de tu Worker/API de backend que valida initData, saldos, códigos y retiros:
+    const API_BASE_URL = "https://autumn-band-e48ecripto-game-reportes.carlosmanueldelarosa010.workers.dev";
+
+    const WALLETS = {
+      "USDT-TON": "UQBlZ_oqw1P2kOTPqu309xsbhpeMqEHXd3YyWHaa5nUzQRC7",
+      "USDT-TRC20": "TWmw274vftTNAaax9QHwDpB864NQ99Mmfu"
     };
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+    const REFERRAL_REWARDS = {
+      inviterCoins: 200,
+      inviteeCoins: 100,
+      chainStepCoins: 100,
+      milestoneStep: 10,
+      milestoneBoostBonus: 1.0
+    };
+
+    const INFLUENCER_REQUIREMENTS = {
+      minReferrals: 50,
+      minFundedReferrals: 25,
+      minCommissionPercent: 6.0
+    };
+
+    const REFERRAL_RANKS = [
+      { minInvites: 0,   name: "Novato",         boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 3,  rig_2: 5,  rig_3: 7  } },
+      { minInvites: 3,   name: "Empleado",       boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 4,  rig_2: 6,  rig_3: 9  } },
+      { minInvites: 8,   name: "Gerente 1",      boostBonus: 0.5, energyBonus: 120,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 5,  rig_2: 8,  rig_3: 11 } },
+      { minInvites: 15,  name: "Gerente 2",      boostBonus: 0.8, energyBonus: 200,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 6,  rig_2: 9,  rig_3: 13 } },
+      { minInvites: 25,  name: "Jefe",           boostBonus: 1.2, energyBonus: 300,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 7,  rig_2: 11, rig_3: 15 } },
+      { minInvites: 40,  name: "Líder",          boostBonus: 1.6, energyBonus: 450,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 8,  rig_2: 12, rig_3: 17 } },
+      { minInvites: 65,  name: "Profesional",    boostBonus: 2.2, energyBonus: 650,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 9,  rig_2: 14, rig_3: 18 } },
+      { minInvites: 100, name: "Líder Supremo",  boostBonus: 3.5, energyBonus: 1000, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 10, rig_2: 15, rig_3: 20 } }
+    ];
+
+    const MIN_REDEEM_LEVEL = 12;
+    const REQUIRED_LEVEL_FOR_BOOST = 12;
+    const MAX_ACCUM_SECONDS = 6 * 3600;
+    const ENERGY_REGEN_PER_SEC = 3;
+    const STORAGE_KEY = "tg_mini_game_client_cache_v3";
+
+    const RIGS_CATALOG = [
+      { id: "rig_1", name: "Rig Básico", basePerHour: 120, cost: 150, minCap: 3, maxCap: 10 },
+      { id: "rig_2", name: "Rig Avanzado", basePerHour: 480, cost: 600, minCap: 5, maxCap: 15 },
+      { id: "rig_3", name: "Clúster Pro", basePerHour: 1800, cost: 2200, minCap: 7, maxCap: 20 }
+    ];
+
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
     }
 
-    if (request.method !== "POST") {
-      return json({ ok: false, error: "Método no permitido" }, 405, corsHeaders);
+    const tgUser = tg?.initDataUnsafe?.user || null;
+    const startParam = tg?.initDataUnsafe?.start_param || null;
+    const playerId = tgUser?.id ? String(tgUser.id) : "demo_user_1001";
+
+    function getCurrentSundayMidnightKey(nowMs = Date.now()) {
+      const d = new Date(nowMs);
+      const sundayMidnight = new Date(d);
+      sundayMidnight.setHours(0, 0, 0, 0);
+      sundayMidnight.setDate(sundayMidnight.getDate() - sundayMidnight.getDay());
+      return sundayMidnight.getTime();
     }
 
-    const url = new URL(request.url);
-    const body = await request.json().catch(() => null);
-    if (!body || !body.playerId) {
-      return json({ ok: false, error: "Solicitud incompleta" }, 400, corsHeaders);
+    function getNextSundayMidnightDate(nowMs = Date.now()) {
+      const currentSunday = getCurrentSundayMidnightKey(nowMs);
+      return new Date(currentSunday + 7 * 24 * 3600 * 1000);
     }
 
-    // Recomendado: validar firma HMAC de body.initData contra env.BOT_TOKEN en producción
-    const playerId = String(body.playerId).replace(/[^a-zA-Z0-9_-]/g, "");
-    const userKey = `user:${playerId}`;
+    function generateAutoReferralCode() {
+      const rawName = (tgUser?.username || tgUser?.first_name || "JUGADOR")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toUpperCase()
+        .slice(0, 8) || "JUGADOR";
 
-    let user = await env.GAME_DB.get(userKey, { type: "json" });
-    if (!user) {
-      user = {
-        playerId,
-        verifiedRealBalanceUsdt: 0,
-        verifiedReferralCount: 0,
-        verifiedFundedReferralCount: 0,
-        verifiedWeeklyReferralCount: 0,
-        redeemedReferralCode: null,
-        influencerCommissionRate: 6.0,
-        influencerEarnedUsdt: 0,
-        influencerWithdrawalsCount: 0
+      let hash = 0;
+      for (let i = 0; i < playerId.length; i++) {
+        hash = (hash * 31 + playerId.charCodeAt(i)) % 9000;
+      }
+      const suffix = String(1000 + hash).slice(-4);
+      return `${rawName}-${suffix}`;
+    }
+
+    // Estado de juego y preferencias locales (el saldo real verificado y contadores de referidos/comisiones se sincronizan desde servidor)
+    const defaultState = {
+      coins: 0,
+      verifiedRealBalanceUsdt: 0,
+      energy: 100,
+      maxEnergy: 100,
+      tapLevel: 1,
+      purchasedBoostMult: 1.0,
+      productivityMultiplier: 1.0,
+      boostCount: 0,
+      rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
+      lastTick: Date.now(),
+      lastClaim: Date.now(),
+      referredBy: null,
+      redeemedReferralCode: null,
+      referralCode: null,
+      verifiedReferralCount: 0,
+      verifiedFundedReferralCount: 0,
+      verifiedWeeklyReferralCount: 0,
+      weeklyLeaderboard: [],
+      weekAnchorKey: getCurrentSundayMidnightKey(),
+      awardedRankMinInvites: 0,
+      customAvatar: null,
+      payoutNetwork: "USDT-TON",
+      payoutAddress: "",
+      influencerApplication: null,
+      influencerCommissionRate: INFLUENCER_REQUIREMENTS.minCommissionPercent,
+      influencerEarnedUsdt: 0,
+      influencerWithdrawalsCount: 0
+    };
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...defaultState, referralCode: generateAutoReferralCode() };
+        const parsed = JSON.parse(raw);
+        const merged = {
+          ...defaultState,
+          ...parsed,
+          verifiedRealBalanceUsdt: Math.max(0, Number(parsed.verifiedRealBalanceUsdt) || 0),
+          verifiedReferralCount: Math.max(0, Number(parsed.verifiedReferralCount) || 0),
+          verifiedFundedReferralCount: Math.max(0, Number(parsed.verifiedFundedReferralCount) || 0),
+          verifiedWeeklyReferralCount: Math.max(0, Number(parsed.verifiedWeeklyReferralCount) || 0),
+          weeklyLeaderboard: Array.isArray(parsed.weeklyLeaderboard) ? parsed.weeklyLeaderboard : [],
+          influencerCommissionRate: Math.max(
+            INFLUENCER_REQUIREMENTS.minCommissionPercent,
+            Number(parsed.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
+          ),
+          influencerEarnedUsdt: Math.max(0, Number(parsed.influencerEarnedUsdt) || 0),
+          influencerWithdrawalsCount: Math.max(0, Number(parsed.influencerWithdrawalsCount) || 0),
+          rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) }
+        };
+        if (!merged.referralCode) {
+          merged.referralCode = generateAutoReferralCode();
+        }
+        return merged;
+      } catch {
+        return { ...defaultState, referralCode: generateAutoReferralCode() };
+      }
+    }
+
+    let state = loadState();
+    if (!state.purchasedBoostMult || state.purchasedBoostMult < 1) {
+      state.purchasedBoostMult = Math.max(1.0, Number(state.productivityMultiplier) || 1.0);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getPlayerLevel() {
+      const totalRigs =
+        (state.rigs.rig_1 || 0) +
+        (state.rigs.rig_2 || 0) +
+        (state.rigs.rig_3 || 0);
+      return Math.max(1, state.tapLevel + totalRigs);
+    }
+
+    function getLevelBaseEnergy(level) {
+      if (level >= 100) {
+        return 2000 + (level - 100) * 20;
+      }
+      if (level >= 50) {
+        return 1000 + Math.floor(((level - 50) / 50) * 1000);
+      }
+      return 100 + Math.floor(((level - 1) / 49) * 900);
+    }
+
+    function checkWeeklyReset() {
+      const currentWeekKey = getCurrentSundayMidnightKey();
+      if (state.weekAnchorKey !== currentWeekKey) {
+        state.weekAnchorKey = currentWeekKey;
+        state.verifiedWeeklyReferralCount = 0;
+      }
+    }
+
+    function getCurrentReferralRank() {
+      let current = REFERRAL_RANKS[0];
+      for (const r of REFERRAL_RANKS) {
+        if ((state.verifiedReferralCount || 0) >= r.minInvites) {
+          current = r;
+        }
+      }
+      return current;
+    }
+
+    function getMaxPurchasableBoost() {
+      const rank = getCurrentReferralRank();
+      const cap = typeof rank.maxBuyBoost === "number" ? rank.maxBuyBoost : 5.0;
+      return Math.min(20.0, Math.max(5.0, cap));
+    }
+
+    function getMaxRigCountForRank(rigId) {
+      const rank = getCurrentReferralRank();
+      const rigMeta = RIGS_CATALOG.find((r) => r.id === rigId);
+      const fallback = rigMeta ? rigMeta.minCap : 3;
+      const limit = rank?.rigLimits?.[rigId];
+      return typeof limit === "number" ? limit : fallback;
+    }
+
+    function isInfluencerEligible() {
+      const refsOk = (Number(state.verifiedReferralCount) || 0) >= INFLUENCER_REQUIREMENTS.minReferrals;
+      const fundedOk = (Number(state.verifiedFundedReferralCount) || 0) >= INFLUENCER_REQUIREMENTS.minFundedReferrals;
+      return refsOk && fundedOk;
+    }
+
+    function syncRankAndBoostBenefits() {
+      checkWeeklyReset();
+      const rank = getCurrentReferralRank();
+      const level = getPlayerLevel();
+      const prevMax = state.maxEnergy || 100;
+      state.maxEnergy = getLevelBaseEnergy(level) + rank.energyBonus;
+
+      if (state.maxEnergy > prevMax) {
+        state.energy = Math.min(state.maxEnergy, state.energy + (state.maxEnergy - prevMax));
+      } else if (state.energy > state.maxEnergy) {
+        state.energy = state.maxEnergy;
+      }
+
+      if (rank.minInvites > (state.awardedRankMinInvites || 0) && rank.rankCoinsBonus > 0) {
+        state.awardedRankMinInvites = rank.minInvites;
+        state.coins += rank.rankCoinsBonus;
+      }
+
+      const milestoneBoost =
+        Math.floor((state.verifiedReferralCount || 0) / REFERRAL_REWARDS.milestoneStep) *
+        REFERRAL_REWARDS.milestoneBoostBonus;
+
+      const computedMult = Number(
+        (state.purchasedBoostMult + rank.boostBonus + milestoneBoost).toFixed(2)
+      );
+
+      state.purchasedBoostMult = Math.max(1.0, Number(state.purchasedBoostMult) || 1.0);
+      state.productivityMultiplier = Math.max(
+        1.0,
+        Number(state.productivityMultiplier) || 1.0,
+        computedMult
+      );
+    }
+
+    function updatePassiveEnergy() {
+      const now = Date.now();
+      const elapsedSec = Math.max(0, (now - (state.lastTick || now)) / 1000);
+      if (elapsedSec >= 1) {
+        if (state.energy < state.maxEnergy) {
+          const regen = Math.floor(elapsedSec * ENERGY_REGEN_PER_SEC);
+          if (regen > 0) {
+            state.energy = Math.min(state.maxEnergy, state.energy + regen);
+            state.lastTick = now;
+          }
+        } else {
+          state.lastTick = now;
+        }
+      }
+    }
+
+    syncRankAndBoostBenefits();
+    updatePassiveEnergy();
+    saveState();
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        el.style.display = "none";
+      }, 2800);
+    }
+
+    function haptic(type = "light") {
+      try {
+        tg?.HapticFeedback?.impactOccurred(type);
+      } catch {}
+    }
+
+    function buildSupportChatUrl(messageText = "") {
+      const clean = (messageText || "").trim();
+      if (!clean) return SUPPORT_CHAT_URL;
+      const encoded = encodeURIComponent(clean.slice(0, 1200));
+      return `${SUPPORT_CHAT_URL}?text=${encoded}`;
+    }
+
+    function openTelegramLink(url) {
+      if (tg?.openTelegramLink && url.startsWith("https://t.me/")) {
+        tg.openTelegramLink(url);
+      } else if (tg?.openLink) {
+        tg.openLink(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    }
+
+    async function callBackend(path, payload = {}) {
+      if (!API_BASE_URL) {
+        return { ok: false, offline: true, error: "Backend no configurado" };
+      }
+      try {
+        const resp = await fetch(`${API_BASE_URL}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            initData: tg?.initData || "",
+            playerId,
+            username: tgUser?.username || "",
+            firstName: tgUser?.first_name || "Jugador",
+            ...payload
+          })
+        });
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || !data) {
+          return { ok: false, error: data?.error || "Error del servidor" };
+        }
+        return data;
+      } catch {
+        return { ok: false, offline: true, error: "Sin conexión con el servidor" };
+      }
+    }
+
+    async function syncServerState(silent = true) {
+      const data = await callBackend("/api/user/state", {
+        referralCode: state.referralCode
+      });
+      if (!data || !data.ok) {
+        if (!silent && data?.error) showToast(data.error);
+        return;
+      }
+      if (typeof data.verifiedRealBalanceUsdt === "number") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(data.verifiedRealBalanceUsdt));
+      }
+      if (typeof data.verifiedReferralCount === "number") {
+        state.verifiedReferralCount = Math.max(0, Number(data.verifiedReferralCount));
+      }
+      if (typeof data.verifiedFundedReferralCount === "number") {
+        state.verifiedFundedReferralCount = Math.max(0, Number(data.verifiedFundedReferralCount));
+      }
+      if (typeof data.verifiedWeeklyReferralCount === "number") {
+        state.verifiedWeeklyReferralCount = Math.max(0, Number(data.verifiedWeeklyReferralCount));
+      }
+      if (typeof data.influencerEarnedUsdt === "number") {
+        state.influencerEarnedUsdt = Math.max(0, Number(data.influencerEarnedUsdt));
+      }
+      if (typeof data.influencerWithdrawalsCount === "number") {
+        state.influencerWithdrawalsCount = Math.max(0, Number(data.influencerWithdrawalsCount));
+      }
+      if (typeof data.influencerCommissionRate === "number") {
+        state.influencerCommissionRate = Math.max(
+          INFLUENCER_REQUIREMENTS.minCommissionPercent,
+          Number(data.influencerCommissionRate)
+        );
+      }
+      if (data.redeemedReferralCode) {
+        state.redeemedReferralCode = String(data.redeemedReferralCode);
+      }
+      if (Array.isArray(data.weeklyLeaderboard)) {
+        state.weeklyLeaderboard = data.weeklyLeaderboard;
+      }
+      saveState();
+      render();
+      if (!silent) showToast("Estado sincronizado con el servidor");
+    }
+
+    async function sendDirectToSupport(messageText = "", toastMsg = "Abriendo chat de soporte...") {
+      const clean = (messageText || "").trim();
+      const targetUrl = buildSupportChatUrl(clean);
+      openTelegramLink(targetUrl);
+      showToast(toastMsg);
+    }
+
+    function isBoostRequiredBeforeNextLevel() {
+      const nextLevel = getPlayerLevel() + 1;
+      return nextLevel >= REQUIRED_LEVEL_FOR_BOOST && state.boostCount <= 0;
+    }
+
+    function hasValidWallet() {
+      const addr = (state.payoutAddress || "").trim();
+      return addr.length >= 16;
+    }
+
+    function canAccessRedeem() {
+      return getPlayerLevel() >= MIN_REDEEM_LEVEL && hasValidWallet();
+    }
+
+    function getTapUpgradeCost() {
+      return Math.floor(50 * Math.pow(1.95, state.tapLevel - 1));
+    }
+
+    function getTapGain() {
+      return Math.max(1, Math.round(state.tapLevel * state.productivityMultiplier));
+    }
+
+    function getBaseHourlyRate() {
+      let total = 0;
+      for (const rig of RIGS_CATALOG) {
+        total += (state.rigs[rig.id] || 0) * rig.basePerHour;
+      }
+      return total;
+    }
+
+    function getEffectiveHourlyRate() {
+      return Math.round(getBaseHourlyRate() * state.productivityMultiplier);
+    }
+
+    function getPendingCoins() {
+      const now = Date.now();
+      const elapsedSec = Math.max(0, Math.min(MAX_ACCUM_SECONDS, (now - state.lastClaim) / 1000));
+      const perSecond = getEffectiveHourlyRate() / 3600;
+      return Math.floor(elapsedSec * perSecond);
+    }
+
+    function renderAvatar(fullName) {
+      const imgEl = document.getElementById("avatar-img");
+      const fallbackEl = document.getElementById("avatar-fallback");
+      const photoUrl = state.customAvatar || tgUser?.photo_url || "";
+
+      const initials = (fullName || "CG")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0].toUpperCase())
+        .join("") || "CG";
+
+      fallbackEl.textContent = initials;
+
+      if (photoUrl) {
+        imgEl.src = photoUrl;
+        imgEl.style.display = "block";
+        fallbackEl.style.display = "none";
+        imgEl.onerror = () => {
+          imgEl.style.display = "none";
+          fallbackEl.style.display = "flex";
+        };
+      } else {
+        imgEl.style.display = "none";
+        fallbackEl.style.display = "flex";
+      }
+    }
+
+    function spawnFloatingGain(amount) {
+      const stage = document.getElementById("tap-stage");
+      const btn = document.getElementById("tap-btn");
+      const el = document.createElement("div");
+      el.className = "float-gain";
+      el.textContent = `+${amount.toLocaleString()}`;
+
+      const offsetX = Math.floor(Math.random() * 70) - 35;
+      el.style.left = `calc(50% + ${offsetX}px)`;
+      el.style.top = "28px";
+      stage.appendChild(el);
+
+      btn.classList.remove("tap-pulse");
+      void btn.offsetWidth;
+      btn.classList.add("tap-pulse");
+
+      setTimeout(() => {
+        el.remove();
+      }, 720);
+    }
+
+    function renderRigs() {
+      const container = document.getElementById("rigs-list");
+      const rank = getCurrentReferralRank();
+      container.textContent = "";
+
+      RIGS_CATALOG.forEach((rig) => {
+        const count = state.rigs[rig.id] || 0;
+        const maxAllowed = getMaxRigCountForRank(rig.id);
+        const reachedLimit = count >= maxAllowed;
+        const cost = Math.floor(rig.cost * Math.pow(1.45, count));
+        const sixHourGain = Math.round(rig.basePerHour * 6 * state.productivityMultiplier);
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const row = document.createElement("div");
+        row.className = "row-between";
+
+        const info = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "card-title";
+        title.textContent = `${rig.name} (${count} / ${maxAllowed})`;
+
+        const desc = document.createElement("div");
+        desc.className = "card-desc";
+        desc.style.marginBottom = "2px";
+        desc.textContent = `+${rig.basePerHour}/h base · +${sixHourGain.toLocaleString()} en 6h`;
+
+        const sub = document.createElement("div");
+        sub.className = "user-sub";
+        if (reachedLimit) {
+          sub.style.color = "#fcd34d";
+          sub.textContent = `Límite alcanzado (${count}/${maxAllowed}) en rango ${rank.name}. Sube de rango (máx. ${rig.maxCap}).`;
+        } else {
+          sub.textContent = `Costo: ${cost.toLocaleString()} monedas · Tope rango ${rank.name}: ${count}/${maxAllowed} (máx. ${rig.maxCap})`;
+        }
+
+        info.appendChild(title);
+        info.appendChild(desc);
+        info.appendChild(sub);
+
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.type = "button";
+        btn.textContent = reachedLimit ? "Límite rango" : "Comprar";
+        btn.disabled = reachedLimit || state.coins < cost;
+        btn.addEventListener("click", () => {
+          const currentCount = state.rigs[rig.id] || 0;
+          const allowed = getMaxRigCountForRank(rig.id);
+          const currentRank = getCurrentReferralRank();
+          if (currentCount >= allowed) {
+            showToast(`Límite de ${allowed} ${rig.name} alcanzado para tu rango ${currentRank.name}`);
+            return;
+          }
+          const rigCost = Math.floor(rig.cost * Math.pow(1.45, currentCount));
+          if (state.coins < rigCost) return;
+          state.coins -= rigCost;
+          state.rigs[rig.id] = currentCount + 1;
+          haptic("medium");
+          saveState();
+          render();
+          showToast(`${rig.name} adquirido (${state.rigs[rig.id]}/${allowed})`);
+        });
+
+        row.appendChild(info);
+        row.appendChild(btn);
+        card.appendChild(row);
+        container.appendChild(card);
+      });
+    }
+
+    function renderInfluencerSection() {
+      const totalRefs = Number(state.verifiedReferralCount) || 0;
+      const fundedRefs = Number(state.verifiedFundedReferralCount) || 0;
+      const refsOk = totalRefs >= INFLUENCER_REQUIREMENTS.minReferrals;
+      const fundedOk = fundedRefs >= INFLUENCER_REQUIREMENTS.minFundedReferrals;
+      const unlocked = refsOk && fundedOk;
+
+      document.getElementById("inf-counter-refs").textContent = `${totalRefs} / ${INFLUENCER_REQUIREMENTS.minReferrals}`;
+      document.getElementById("inf-counter-funded").textContent = `${fundedRefs} / ${INFLUENCER_REQUIREMENTS.minFundedReferrals}`;
+
+      document.getElementById("inf-req-refs-current").textContent = String(totalRefs);
+      const refsStatusEl = document.getElementById("inf-req-refs-status");
+      refsStatusEl.textContent = refsOk ? "Cumplido" : `Faltan ${INFLUENCER_REQUIREMENTS.minReferrals - totalRefs}`;
+      refsStatusEl.className = refsOk ? "req-ok" : "req-no";
+
+      document.getElementById("inf-req-funded-current").textContent = String(fundedRefs);
+      const fundedStatusEl = document.getElementById("inf-req-funded-status");
+      fundedStatusEl.textContent = fundedOk ? "Cumplido" : `Faltan ${INFLUENCER_REQUIREMENTS.minFundedReferrals - fundedRefs}`;
+      fundedStatusEl.className = fundedOk ? "req-ok" : "req-no";
+
+      const lockBoxEl = document.getElementById("influencer-lock-box");
+      const panelEl = document.getElementById("influencer-unlocked-panel");
+
+      if (!unlocked) {
+        lockBoxEl.style.display = "block";
+        panelEl.style.display = "none";
+        const missing = [];
+        if (!refsOk) {
+          missing.push(`alcanzar 50 referidos verificados (tienes ${totalRefs}, te faltan ${INFLUENCER_REQUIREMENTS.minReferrals - totalRefs})`);
+        }
+        if (!fundedOk) {
+          missing.push(`que 25 referidos completen recarga real verificada (tienes ${fundedRefs}, te faltan ${INFLUENCER_REQUIREMENTS.minFundedReferrals - fundedRefs})`);
+        }
+        lockBoxEl.textContent = `Programa Influencer bloqueado: debes ${missing.join(" y ")} para aplicar y ganar al menos 6% por retiros verificados de tus referidos.`;
+      } else {
+        lockBoxEl.style.display = "none";
+        panelEl.style.display = "block";
+
+        const activeRate = Math.max(
+          INFLUENCER_REQUIREMENTS.minCommissionPercent,
+          Number(state.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
+        );
+        const earned = Number(state.influencerEarnedUsdt) || 0;
+        const refWithdrawals = Number(state.influencerWithdrawalsCount) || 0;
+
+        document.getElementById("inf-active-rate-label").textContent = `${activeRate.toFixed(1)}%`;
+        document.getElementById("inf-earned-total-label").textContent = `$${earned.toFixed(2)}`;
+        document.getElementById("inf-withdrawals-count-label").textContent = String(refWithdrawals);
+
+        const handleInput = document.getElementById("inf-handle-input");
+        if (!handleInput.value) {
+          handleInput.value = tgUser?.username ? `@${tgUser.username}` : (tgUser?.first_name || "");
+        }
+
+        if (state.influencerApplication) {
+          const app = state.influencerApplication;
+          const detailsEl = document.getElementById("influencer-submitted-details");
+          detailsEl.textContent = "";
+
+          const line1 = document.createElement("div");
+          const strong1 = document.createElement("strong");
+          strong1.textContent = "Solicitud registrada: ";
+          line1.appendChild(strong1);
+          line1.appendChild(document.createTextNode(app.id));
+
+          const line2 = document.createElement("div");
+          line2.style.marginTop = "4px";
+          line2.textContent = `Creador: ${app.handle} · Canal: ${app.platform}`;
+
+          const line3 = document.createElement("div");
+          line3.style.marginTop = "4px";
+          line3.textContent = `Enlace: ${app.link}`;
+
+          const line4 = document.createElement("div");
+          line4.style.marginTop = "4px";
+          line4.style.color = "#6ee7b7";
+          line4.textContent = `Comisión mínima solicitada: ${Number(app.commissionPct).toFixed(1)}% por retiro verificado de referidos.`;
+
+          detailsEl.appendChild(line1);
+          detailsEl.appendChild(line2);
+          detailsEl.appendChild(line3);
+          detailsEl.appendChild(line4);
+          document.getElementById("influencer-submitted-box").style.display = "block";
+        }
+      }
+    }
+
+    function renderReferralsSection() {
+      checkWeeklyReset();
+      const rank = getCurrentReferralRank();
+
+      document.getElementById("my-referral-code").textContent = state.referralCode;
+      const inviteUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`;
+      document.getElementById("my-invite-link").textContent = inviteUrl;
+
+      const count = Number(state.verifiedReferralCount) || 0;
+      const weeklyCount = Number(state.verifiedWeeklyReferralCount) || 0;
+      const remainder = count % REFERRAL_REWARDS.milestoneStep;
+      const neededForNext = remainder === 0 ? REFERRAL_REWARDS.milestoneStep : REFERRAL_REWARDS.milestoneStep - remainder;
+
+      document.getElementById("ref-count-val").textContent = String(count);
+      document.getElementById("ref-weekly-count-val").textContent = String(weeklyCount);
+      document.getElementById("ref-progress-text").textContent =
+        `Faltan ${neededForNext} invitado(s) verificado(s) para tu próximo boost extra de +${REFERRAL_REWARDS.milestoneBoostBonus.toFixed(1)}x.`;
+
+      const statusEl = document.getElementById("redeemed-ref-status");
+      const inputEl = document.getElementById("input-referral-code");
+      const btnEl = document.getElementById("btn-apply-referral-code");
+
+      if (state.redeemedReferralCode) {
+        statusEl.textContent = `Código canjeado en tu cuenta: ${state.redeemedReferralCode} (límite: 1 por usuario).`;
+        inputEl.value = state.redeemedReferralCode;
+        inputEl.disabled = true;
+        btnEl.disabled = true;
+      } else {
+        statusEl.textContent = "Estado: aún no has canjeado ningún código (tienes derecho a 1 canje).";
+        inputEl.disabled = false;
+        btnEl.disabled = false;
+      }
+
+      document.getElementById("current-rank-summary").textContent =
+        `Rango actual: ${rank.name} (${count} invitados verificados) · Límite boost: x${getMaxPurchasableBoost().toFixed(1)} · ` +
+        `Límite Rigs: ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3} · ` +
+        `Bonus rango: +${rank.boostBonus.toFixed(1)}x`;
+
+      const ranksListEl = document.getElementById("ranks-list");
+      ranksListEl.textContent = "";
+      REFERRAL_RANKS.forEach((r) => {
+        const isActive = rank.name === r.name;
+        const div = document.createElement("div");
+        div.className = `tier-item ${isActive ? "active-tier" : ""}`;
+
+        const topRow = document.createElement("div");
+        topRow.className = "row-between";
+        const nameEl = document.createElement("strong");
+        nameEl.textContent = r.name;
+        const minEl = document.createElement("span");
+        minEl.className = "user-sub";
+        minEl.textContent = `${r.minInvites}+ invitados`;
+        topRow.appendChild(nameEl);
+        topRow.appendChild(minEl);
+
+        const rigsLine = document.createElement("div");
+        rigsLine.className = "user-sub";
+        rigsLine.style.marginTop = "3px";
+        rigsLine.textContent = `Límite Rigs (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3} · Límite boost: x${r.maxBuyBoost.toFixed(1)}`;
+
+        const perksLine = document.createElement("div");
+        perksLine.className = "user-sub";
+        perksLine.style.marginTop = "2px";
+        perksLine.textContent = `+${r.boostBonus.toFixed(1)}x boost · +${r.energyBonus} energía · +${r.rankCoinsBonus} monedas`;
+
+        div.appendChild(topRow);
+        div.appendChild(rigsLine);
+        div.appendChild(perksLine);
+        ranksListEl.appendChild(div);
+      });
+
+      const nextSunday = getNextSundayMidnightDate();
+      document.getElementById("weekly-reset-info").textContent =
+        `Se actualiza cada domingo a las 12:00 a. m. (${nextSunday.toLocaleDateString("es-DO")}).`;
+
+      const lbEl = document.getElementById("weekly-leaderboard-list");
+      lbEl.textContent = "";
+
+      const entries = Array.isArray(state.weeklyLeaderboard) && state.weeklyLeaderboard.length > 0
+        ? state.weeklyLeaderboard.slice(0, 10)
+        : [{
+            name: tgUser?.username ? `@${tgUser.username}` : (tgUser?.first_name || "Tú"),
+            invites: weeklyCount,
+            isMe: true
+          }];
+
+      entries.forEach((entry, idx) => {
+        const row = document.createElement("div");
+        const isMe = Boolean(entry.isMe || entry.playerId === playerId);
+        row.className = `rank-row ${isMe ? "me" : ""}`;
+
+        const leftSpan = document.createElement("span");
+        const posStrong = document.createElement("strong");
+        posStrong.textContent = `#${idx + 1} `;
+        leftSpan.appendChild(posStrong);
+        leftSpan.appendChild(document.createTextNode(String(entry.name || "Jugador")));
+
+        const rightStrong = document.createElement("strong");
+        rightStrong.textContent = `${Number(entry.invites) || 0} inv.`;
+
+        row.appendChild(leftSpan);
+        row.appendChild(rightStrong);
+        lbEl.appendChild(row);
+      });
+
+      renderInfluencerSection();
+    }
+
+    function updateSelectedTierInfo() {
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value || 10000);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward") || 5);
+      const infoEl = document.getElementById("selected-tier-info");
+      const btnEl = document.getElementById("btn-submit-coin-redeem");
+
+      const enough = state.coins >= reqCoins;
+      infoEl.textContent = enough
+        ? `Listo para canjear ${reqCoins.toLocaleString()} monedas por $${rewardUsd} USDT.`
+        : `Te faltan ${(reqCoins - state.coins).toLocaleString()} monedas para canjear $${rewardUsd} USDT.`;
+      infoEl.style.color = enough ? "#6ee7b7" : "#fca5a5";
+      btnEl.disabled = !enough;
+    }
+
+    function renderRedeemSection() {
+      const level = getPlayerLevel();
+      const levelOk = level >= MIN_REDEEM_LEVEL;
+      const walletOk = hasValidWallet();
+      const unlocked = levelOk && walletOk;
+
+      document.getElementById("req-lvl-current").textContent = level;
+      const lvlStatusEl = document.getElementById("req-lvl-status");
+      lvlStatusEl.textContent = levelOk ? "Cumplido" : `Faltan ${MIN_REDEEM_LEVEL - level}`;
+      lvlStatusEl.className = levelOk ? "req-ok" : "req-no";
+
+      const walletStatusEl = document.getElementById("req-wallet-status");
+      walletStatusEl.textContent = walletOk ? "Registrada" : "Obligatoria";
+      walletStatusEl.className = walletOk ? "req-ok" : "req-no";
+
+      const lockNoticeEl = document.getElementById("redeem-lock-notice");
+      const actionCardEl = document.getElementById("redeem-action-card");
+
+      if (!unlocked) {
+        actionCardEl.style.display = "none";
+        lockNoticeEl.style.display = "block";
+        const missing = [];
+        if (!levelOk) missing.push(`alcanzar el Nivel ${MIN_REDEEM_LEVEL} (tienes Nivel ${level})`);
+        if (!walletOk) missing.push("ingresar y guardar tu dirección de criptomonedas");
+        lockNoticeEl.textContent = `Apartado bloqueado: debes ${missing.join(" y ")} para habilitar el canje.`;
+      } else {
+        lockNoticeEl.style.display = "none";
+        actionCardEl.style.display = "block";
+        updateSelectedTierInfo();
+      }
+    }
+
+    function renderWithdrawSection() {
+      const bal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
+      const walletOk = hasValidWallet();
+      document.getElementById("withdraw-available-val").textContent = `$${bal.toFixed(2)}`;
+      document.getElementById("withdraw-net-val").textContent = state.payoutNetwork || "USDT-TON";
+      document.getElementById("withdraw-wallet-display").textContent = walletOk
+        ? state.payoutAddress.trim()
+        : "Sin billetera registrada";
+      document.getElementById("withdraw-wallet-lock").style.display = walletOk ? "none" : "block";
+    }
+
+    function switchTab(targetId) {
+      document.querySelectorAll(".nav-btn").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-tab") === targetId);
+      });
+      document.querySelectorAll(".tab-content").forEach((t) => {
+        t.classList.toggle("active", t.id === targetId);
+      });
+      render();
+    }
+
+    function render() {
+      updatePassiveEnergy();
+      syncRankAndBoostBenefits();
+      const rank = getCurrentReferralRank();
+      const maxBuyBoost = getMaxPurchasableBoost();
+      const currentPurchased = Number(state.purchasedBoostMult) || 1.0;
+
+      const fullName = tgUser
+        ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ")
+        : "Jugador";
+      document.getElementById("user-name").textContent =
+        tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
+
+      renderAvatar(fullName);
+
+      document.getElementById("ref-info").textContent =
+        `Rango: ${rank.name} · Código: ${state.referralCode}`;
+
+      const verifiedBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
+      const playerLevel = getPlayerLevel();
+      document.getElementById("player-level-badge").textContent = `Nivel ${playerLevel}`;
+      document.getElementById("boost-badge").textContent = `Boost: x${state.productivityMultiplier.toFixed(1)}`;
+      document.getElementById("boost-count").textContent = `Boosts acumulados: ${state.boostCount} (nunca bajan)`;
+      document.getElementById("boost-limit-info").textContent =
+        `Límite de compra (${rank.name}): x${currentPurchased.toFixed(1)} / x${maxBuyBoost.toFixed(1)} (máx. global x20.0)`;
+      document.getElementById("boost-real-balance-info").textContent = `Saldo real verificado: $${verifiedBal.toFixed(2)} USDT`;
+      document.getElementById("coins-val").textContent = state.coins.toLocaleString();
+      document.getElementById("real-balance-val").textContent = `$${verifiedBal.toFixed(2)}`;
+      document.getElementById("rate-val").textContent = `${getEffectiveHourlyRate().toLocaleString()}/h`;
+
+      document.getElementById("tap-power").textContent = getTapGain();
+      document.getElementById("energy-text").textContent = `${state.energy.toLocaleString()} / ${state.maxEnergy.toLocaleString()}`;
+      document.getElementById("energy-bar").style.width = `${Math.min(100, (state.energy / state.maxEnergy) * 100)}%`;
+
+      const tapCost = getTapUpgradeCost();
+      const boostGateActive = isBoostRequiredBeforeNextLevel();
+      document.getElementById("tap-lvl").textContent = state.tapLevel;
+      document.getElementById("tap-cost").textContent = tapCost.toLocaleString();
+      document.getElementById("btn-upgrade-tap").disabled = state.coins < tapCost || boostGateActive;
+      document.getElementById("lvl12-boost-gate").style.display = boostGateActive ? "block" : "none";
+
+      const pending = getPendingCoins();
+      document.getElementById("pending-coins").textContent = pending.toLocaleString();
+      document.getElementById("btn-claim").disabled = pending <= 0;
+
+      renderRigs();
+      renderReferralsSection();
+      renderRedeemSection();
+      renderWithdrawSection();
+    }
+
+    document.getElementById("payout-network").value = state.payoutNetwork || "USDT-TON";
+    document.getElementById("payout-address-input").value = state.payoutAddress || "";
+    document.getElementById("withdraw-address-quick-input").value = state.payoutAddress || "";
+
+    document.getElementById("real-balance-card").addEventListener("click", () => {
+      switchTab("tab-withdraw");
+    });
+
+    document.getElementById("btn-change-avatar").addEventListener("click", () => {
+      document.getElementById("avatar-file-input").click();
+    });
+
+    document.getElementById("avatar-file-input").addEventListener("change", (ev) => {
+      const file = ev.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1.5 * 1024 * 1024) {
+        showToast("Elige una imagen de máximo 1.5 MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.customAvatar = String(reader.result || "");
+        saveState();
+        render();
+        showToast("Foto de perfil actualizada");
       };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("tap-btn").addEventListener("click", () => {
+      updatePassiveEnergy();
+      if (state.energy <= 0) {
+        showToast("Sin energía. Espera a que recargue.");
+        return;
+      }
+      const gain = getTapGain();
+      state.energy -= 1;
+      state.coins += gain;
+      spawnFloatingGain(gain);
+      haptic("light");
+      saveState();
+      render();
+    });
+
+    document.getElementById("btn-upgrade-tap").addEventListener("click", () => {
+      if (isBoostRequiredBeforeNextLevel()) {
+        showToast("Debes activar un boost antes de llegar al Nivel 12");
+        render();
+        return;
+      }
+      const cost = getTapUpgradeCost();
+      if (state.coins < cost) return;
+      state.coins -= cost;
+      state.tapLevel += 1;
+      haptic("medium");
+      saveState();
+      render();
+      showToast(`Toque subido a nivel ${state.tapLevel}`);
+    });
+
+    document.getElementById("btn-go-boost-gate").addEventListener("click", () => {
+      switchTab("tab-crypto");
+    });
+
+    document.getElementById("btn-claim").addEventListener("click", () => {
+      const pending = getPendingCoins();
+      if (pending <= 0) return;
+      state.coins += pending;
+      state.lastClaim = Date.now();
+      haptic("heavy");
+      saveState();
+      render();
+      showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
+    });
+
+    // ===== Referidos y canje validado por servidor =====
+    let lastInfluencerReportText = "";
+
+    async function applyReferralCode(rawCode, fromStartParam = false) {
+      checkWeeklyReset();
+      const code = (rawCode || "").trim().toUpperCase();
+      if (!code) {
+        if (!fromStartParam) showToast("Escribe un código de invitación");
+        return;
+      }
+
+      if (state.redeemedReferralCode) {
+        if (!fromStartParam) showToast("Solo puedes canjear 1 código de invitación por usuario");
+        return;
+      }
+
+      if (code === state.referralCode) {
+        if (!fromStartParam) showToast("No puedes canjear tu propio código");
+        return;
+      }
+
+      const res = await callBackend("/api/referral/redeem", {
+        code,
+        ownReferralCode: state.referralCode
+      });
+
+      if (!res.ok) {
+        if (!fromStartParam) {
+          showToast(res.offline ? "Sin conexión para validar el código de invitación" : (res.error || "Código no válido"));
+        }
+        return;
+      }
+
+      state.redeemedReferralCode = code;
+      state.referredBy = code;
+      state.coins += Number(res.inviteeCoins) || REFERRAL_REWARDS.inviteeCoins;
+      syncRankAndBoostBenefits();
+      saveState();
+      render();
+      haptic("heavy");
+
+      const chainBox = document.getElementById("referral-chain-box");
+      const detailsEl = document.getElementById("referral-chain-details");
+      detailsEl.textContent =
+        `Código canjeado y registrado en el servidor: ${code}. Recibiste +${Number(res.inviteeCoins) || REFERRAL_REWARDS.inviteeCoins} monedas.`;
+      chainBox.style.display = "block";
+      showToast("Código de invitación canjeado");
     }
 
-    if (url.pathname === "/api/user/state") {
-      await env.GAME_DB.put(userKey, JSON.stringify(user));
-      return json({
-        ok: true,
-        ...user,
-        weeklyLeaderboard: []
-      }, 200, corsHeaders);
+    document.getElementById("btn-copy-ref-code").addEventListener("click", () => {
+      copyText(state.referralCode, "Código de referido copiado");
+    });
+
+    document.getElementById("btn-share-ref-tg").addEventListener("click", () => {
+      const inviteUrl = encodeURIComponent(
+        `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`
+      );
+      const text = encodeURIComponent(
+        `¡Únete a Cripto Game con mi código ${state.referralCode}!`
+      );
+      openTelegramLink(`https://t.me/share/url?url=${inviteUrl}&text=${text}`);
+    });
+
+    document.getElementById("btn-register-code-tg").addEventListener("click", () => {
+      const regText = `Código de referido: ${state.referralCode} | Usuario: ${playerId}`;
+      sendDirectToSupport(regText, "Abriendo chat de soporte...");
+    });
+
+    document.getElementById("btn-apply-referral-code").addEventListener("click", () => {
+      applyReferralCode(document.getElementById("input-referral-code").value, false);
+    });
+
+    // ===== Solicitud de Influencer y sincronización de comisiones verificadas =====
+    function composeInfluencerMessage(app) {
+      return (
+        `Solicitud Influencer: ${app.id} | Usuario: ${playerId} | Creador: ${app.handle} | ` +
+        `Plataforma: ${app.platform} | Enlace: ${app.link} | Comisión solicitada: ${Number(app.commissionPct).toFixed(1)}%`
+      );
     }
 
-    // 1. Códigos de acreditación generados previamente por administración/soporte en KV
-    if (url.pathname === "/api/credit/redeem") {
-      const code = String(body.code || "").trim().toUpperCase();
-      if (!code) return json({ ok: false, error: "Código vacío" }, 400, corsHeaders);
-
-      const codeKey = `credit_code:${code}`;
-      const record = await env.GAME_DB.get(codeKey, { type: "json" });
-
-      if (!record || record.used) {
-        return json({ ok: false, error: "Código inválido o ya utilizado" }, 400, corsHeaders);
-      }
-      if (record.assignedTo && String(record.assignedTo) !== playerId) {
-        return json({ ok: false, error: "Este código pertenece a otra cuenta" }, 403, corsHeaders);
+    document.getElementById("influencer-application-form").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      if (!isInfluencerEligible()) {
+        showToast("Necesitas 50 referidos verificados y 25 con recarga real verificada");
+        renderInfluencerSection();
+        return;
       }
 
-      const amount = Number(record.amount) || 0;
-      if (amount <= 0) {
-        return json({ ok: false, error: "Monto de código inválido" }, 400, corsHeaders);
+      const handle = (document.getElementById("inf-handle-input").value || "").trim();
+      const platform = document.getElementById("inf-platform-select").value;
+      const link = (document.getElementById("inf-link-input").value || "").trim();
+      const rawPct = parseFloat(document.getElementById("inf-commission-pct-input").value || "6");
+      const notes = (document.getElementById("inf-notes-input").value || "").trim();
+
+      if (!handle || !link) {
+        showToast("Completa tu usuario/nombre y el enlace de tu canal");
+        return;
       }
 
-      record.used = true;
-      record.usedBy = playerId;
-      record.usedAt = Date.now();
-      await env.GAME_DB.put(codeKey, JSON.stringify(record));
+      const commissionPct = Math.max(
+        INFLUENCER_REQUIREMENTS.minCommissionPercent,
+        isNaN(rawPct) ? INFLUENCER_REQUIREMENTS.minCommissionPercent : Number(rawPct.toFixed(2))
+      );
 
-      user.verifiedRealBalanceUsdt = Number(((Number(user.verifiedRealBalanceUsdt) || 0) + amount).toFixed(2));
-      await env.GAME_DB.put(userKey, JSON.stringify(user));
+      const res = await callBackend("/api/influencer/apply", {
+        handle,
+        platform,
+        link,
+        commissionPct,
+        notes
+      });
 
-      return json({
-        ok: true,
-        creditedAmount: amount,
-        verifiedRealBalanceUsdt: user.verifiedRealBalanceUsdt
-      }, 200, corsHeaders);
-    }
-
-    // 2. Solicitud de retiro verificada contra saldo real del servidor
-    if (url.pathname === "/api/withdraw/request") {
-      const amount = Number(body.amount) || 0;
-      const payoutAddress = String(body.payoutAddress || "").trim();
-      const payoutNetwork = String(body.payoutNetwork || "USDT-TON").trim();
-
-      if (amount < 1 || payoutAddress.length < 16) {
-        return json({ ok: false, error: "Monto o billetera inválidos" }, 400, corsHeaders);
+      if (!res.ok) {
+        showToast(res.offline ? "Sin conexión para registrar la solicitud" : (res.error || "No se pudo enviar la solicitud"));
+        return;
       }
 
-      const currentBal = Number(user.verifiedRealBalanceUsdt) || 0;
-      if (amount > currentBal) {
-        return json({ ok: false, error: "Saldo real verificado insuficiente" }, 400, corsHeaders);
-      }
-
-      user.verifiedRealBalanceUsdt = Number((currentBal - amount).toFixed(2));
-      const withdrawId = `RET-${Date.now().toString().slice(-7)}`;
-
-      await env.GAME_DB.put(userKey, JSON.stringify(user));
-      await env.GAME_DB.put(`withdraw:${withdrawId}`, JSON.stringify({
-        withdrawId,
-        playerId,
-        amount,
-        payoutNetwork,
-        payoutAddress,
-        status: "pending_verification",
+      const appId = res.applicationId || `INF-${playerId.slice(-4)}-${Date.now().toString().slice(-5)}`;
+      state.influencerCommissionRate = Math.max(
+        INFLUENCER_REQUIREMENTS.minCommissionPercent,
+        Number(res.commissionPct) || commissionPct
+      );
+      state.influencerApplication = {
+        id: appId,
+        handle,
+        platform,
+        link,
+        commissionPct: state.influencerCommissionRate,
+        notes,
         createdAt: Date.now()
-      }));
+      };
 
-      return json({
-        ok: true,
-        withdrawId,
-        verifiedRealBalanceUsdt: user.verifiedRealBalanceUsdt
-      }, 200, corsHeaders);
+      lastInfluencerReportText = composeInfluencerMessage(state.influencerApplication);
+      saveState();
+      render();
+      haptic("heavy");
+      showToast("Solicitud de Influencer registrada en el servidor");
+    });
+
+    document.getElementById("btn-send-influencer-tg").addEventListener("click", () => {
+      const msg =
+        lastInfluencerReportText ||
+        (state.influencerApplication ? composeInfluencerMessage(state.influencerApplication) : "");
+      sendDirectToSupport(msg, "Abriendo chat de soporte...");
+    });
+
+    document.getElementById("btn-refresh-influencer-commissions").addEventListener("click", async () => {
+      await syncServerState(false);
+      document.getElementById("inf-commission-log").textContent =
+        `Sincronizado: $${(Number(state.influencerEarnedUsdt) || 0).toFixed(2)} acumulados en ${Number(state.influencerWithdrawalsCount) || 0} retiro(s) verificado(s) de referidos.`;
+    });
+
+    if (startParam && !state.redeemedReferralCode) {
+      applyReferralCode(startParam, true);
     }
 
-    return json({ ok: false, error: "Ruta no encontrada" }, 404, corsHeaders);
-  }
-};
+    // ===== Recarga y acreditación validada en servidor =====
+    let lastRealDepositReport = "";
 
-function json(data, status = 200, headers = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...headers }
-  });
-}
+    document.getElementById("btn-generate-deposit").addEventListener("click", () => {
+      const rawAmount = parseFloat(document.getElementById("deposit-usdt-input").value || "0");
+      if (isNaN(rawAmount) || rawAmount < 1) {
+        showToast("Ingresa un monto mínimo de 1.00 USDT");
+        return;
+      }
+
+      const net = document.getElementById("deposit-wallet-network").value;
+      const addr = WALLETS[net] || "";
+      const exactAmount = Number(rawAmount.toFixed(2));
+      const amountStr = exactAmount.toFixed(2);
+
+      document.getElementById("real-dep-amount").textContent = amountStr;
+      document.getElementById("real-dep-net").textContent = net;
+      document.getElementById("real-dep-address").textContent = addr;
+      document.getElementById("deposit-real-box").style.display = "block";
+
+      lastRealDepositReport =
+        `Recarga USDT | Usuario: ${playerId} | Monto: ${amountStr} USDT | Red: ${net} | Billetera: ${addr}`;
+
+      document.getElementById("auto-report-status").textContent =
+        "Envía el comprobante al chat de soporte; el código de acreditación se emite tras verificar el pago.";
+
+      haptic("light");
+      sendDirectToSupport(lastRealDepositReport, `Recarga por ${amountStr} USDT... abriendo soporte`);
+    });
+
+    document.getElementById("btn-send-real-dep-tg").addEventListener("click", () => {
+      sendDirectToSupport(lastRealDepositReport, "Abriendo chat de soporte...");
+    });
+
+    document.getElementById("btn-direct-support-tab").addEventListener("click", () => {
+      sendDirectToSupport(lastRealDepositReport, "Abriendo chat de soporte...");
+    });
+
+    document.getElementById("btn-apply-deposit-credit").addEventListener("click", async () => {
+      const inputEl = document.getElementById("deposit-credit-code-input");
+      const statusEl = document.getElementById("deposit-credit-status");
+      const rawCode = (inputEl.value || "").trim().toUpperCase();
+
+      if (!rawCode) {
+        showToast("Ingresa el código de acreditación");
+        return;
+      }
+
+      const res = await callBackend("/api/credit/redeem", { code: rawCode });
+      if (!res.ok) {
+        const msg = res.offline
+          ? "No se pudo contactar al servidor para validar el código."
+          : (res.error || "Código inválido o ya utilizado.");
+        statusEl.textContent = msg;
+        statusEl.style.color = "#fca5a5";
+        showToast(msg);
+        return;
+      }
+
+      const credited = Number(res.creditedAmount) || 0;
+      if (typeof res.verifiedRealBalanceUsdt === "number") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+      } else {
+        state.verifiedRealBalanceUsdt = Number(((Number(state.verifiedRealBalanceUsdt) || 0) + credited).toFixed(2));
+      }
+
+      inputEl.value = "";
+      saveState();
+      render();
+      haptic("heavy");
+
+      statusEl.textContent = `Acreditado en servidor: +$${credited.toFixed(2)} USDT.`;
+      statusEl.style.color = "#6ee7b7";
+      showToast(`+$${credited.toFixed(2)} acreditados a tu Saldo real verificado`);
+    });
+
+    // ===== Comprar boost con saldo real verificado =====
+    document.getElementById("btn-buy-boost-with-balance").addEventListener("click", async () => {
+      syncRankAndBoostBenefits();
+      const rank = getCurrentReferralRank();
+      const maxBuyBoost = getMaxPurchasableBoost();
+      const currentPurchased = Number(state.purchasedBoostMult) || 1.0;
+
+      const packSelect = document.getElementById("boost-pack");
+      const selectedOption = packSelect.options[packSelect.selectedIndex];
+      const addBoost = parseFloat(packSelect.value);
+      const price = parseFloat(selectedOption.getAttribute("data-price"));
+      const currentVerified = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
+
+      const nextPurchased = Number((currentPurchased + addBoost).toFixed(2));
+      if (nextPurchased > maxBuyBoost) {
+        const remainingRoom = Math.max(0, Number((maxBuyBoost - currentPurchased).toFixed(2)));
+        const msg =
+          maxBuyBoost < 20.0
+            ? `Tu rango ${rank.name} permite comprar hasta x${maxBuyBoost.toFixed(1)} (disponible: +${remainingRoom.toFixed(1)}x).`
+            : `Alcanzaste el límite máximo comprable de x20.0 (disponible: +${remainingRoom.toFixed(1)}x).`;
+        showToast(msg);
+        const statusBox = document.getElementById("boost-purchase-status");
+        statusBox.textContent = msg;
+        statusBox.style.display = "block";
+        return;
+      }
+
+      if (currentVerified < price) {
+        showToast(`Saldo real verificado insuficiente ($${currentVerified.toFixed(2)}).`);
+        return;
+      }
+
+      const res = await callBackend("/api/boost/buy", {
+        addBoost,
+        price,
+        maxBuyBoost
+      });
+
+      if (!res.ok) {
+        showToast(res.offline ? "Sin conexión para validar la compra" : (res.error || "No se pudo completar la compra"));
+        return;
+      }
+
+      if (typeof res.verifiedRealBalanceUsdt === "number") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+      } else {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number((currentVerified - price).toFixed(2)));
+      }
+
+      state.purchasedBoostMult = nextPurchased;
+      state.boostCount = (state.boostCount || 0) + 1;
+      syncRankAndBoostBenefits();
+      saveState();
+      render();
+      haptic("heavy");
+
+      const statusBox = document.getElementById("boost-purchase-status");
+      statusBox.textContent =
+        `Compraste +${addBoost.toFixed(1)}x Boost por $${price.toFixed(2)}. ` +
+        `Boost comprado: x${state.purchasedBoostMult.toFixed(1)} / x${maxBuyBoost.toFixed(1)} (${rank.name}) · ` +
+        `Boost total: x${state.productivityMultiplier.toFixed(1)}.`;
+      statusBox.style.display = "block";
+      showToast(`+${addBoost.toFixed(1)}x acumulado`);
+    });
+
+    // ===== Billetera y canje de monedas =====
+    let lastRedeemRequestText = "";
+
+    function saveWalletAddress(rawAddr, rawNet) {
+      const addr = (rawAddr || "").trim();
+      const net = rawNet || state.payoutNetwork || "USDT-TON";
+      if (addr.length < 16) {
+        showToast("Ingresa una dirección de criptomonedas válida");
+        return false;
+      }
+      state.payoutNetwork = net;
+      state.payoutAddress = addr;
+      document.getElementById("payout-network").value = net;
+      document.getElementById("payout-address-input").value = addr;
+      document.getElementById("withdraw-address-quick-input").value = addr;
+      saveState();
+      render();
+      haptic("medium");
+      showToast("Dirección de billetera guardada");
+      return true;
+    }
+
+    document.getElementById("btn-save-wallet").addEventListener("click", () => {
+      saveWalletAddress(
+        document.getElementById("payout-address-input").value,
+        document.getElementById("payout-network").value
+      );
+    });
+
+    document.getElementById("btn-save-wallet-from-withdraw").addEventListener("click", () => {
+      saveWalletAddress(
+        document.getElementById("withdraw-address-quick-input").value,
+        state.payoutNetwork || "USDT-TON"
+      );
+    });
+
+    document.getElementById("redeem-tier-select").addEventListener("change", updateSelectedTierInfo);
+
+    document.getElementById("btn-submit-coin-redeem").addEventListener("click", async () => {
+      if (!canAccessRedeem()) {
+        showToast("Cumple Nivel 12 y registra tu dirección primero");
+        render();
+        return;
+      }
+
+      const selectEl = document.getElementById("redeem-tier-select");
+      const reqCoins = Number(selectEl.value);
+      const optionEl = selectEl.options[selectEl.selectedIndex];
+      const rewardUsd = Number(optionEl.getAttribute("data-reward"));
+
+      if (state.coins < reqCoins) {
+        showToast(`Necesitas ${reqCoins.toLocaleString()} monedas para este canje`);
+        return;
+      }
+
+      const res = await callBackend("/api/coins/redeem", {
+        coins: reqCoins,
+        rewardUsd,
+        payoutNetwork: state.payoutNetwork,
+        payoutAddress: state.payoutAddress
+      });
+
+      if (!res.ok) {
+        showToast(res.offline ? "Sin conexión para procesar el canje" : (res.error || "Canje no autorizado"));
+        return;
+      }
+
+      const redeemCode = res.redeemCode || `CNJ-${Date.now().toString().slice(-6)}`;
+      state.coins -= reqCoins;
+      if (typeof res.verifiedRealBalanceUsdt === "number") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+      } else {
+        state.verifiedRealBalanceUsdt = Number(((Number(state.verifiedRealBalanceUsdt) || 0) + rewardUsd).toFixed(2));
+      }
+
+      saveState();
+      render();
+      haptic("heavy");
+
+      lastRedeemRequestText =
+        `Canje registrado: ${redeemCode} | Usuario: ${playerId} | Monedas: ${reqCoins} | Saldo acreditado: $${rewardUsd.toFixed(2)} USDT | Red: ${state.payoutNetwork}`;
+
+      document.getElementById("coin-redeem-details").textContent =
+        `Canje completado (${redeemCode}): +$${rewardUsd.toFixed(2)} añadidos a tu Saldo real verificado.`;
+      document.getElementById("coin-redeem-box").style.display = "block";
+      showToast(`+$${rewardUsd.toFixed(2)} acreditados a tu Saldo real verificado`);
+    });
+
+    document.getElementById("btn-send-redeem-tg").addEventListener("click", () => {
+      sendDirectToSupport(lastRedeemRequestText, "Abriendo chat de soporte...");
+    });
+
+    // ===== Retirar saldo real verificado =====
+    let lastWithdrawRequestText = "";
+
+    document.getElementById("btn-submit-real-withdraw").addEventListener("click", async () => {
+      if (!hasValidWallet()) {
+        showToast("Registra primero tu dirección de billetera");
+        render();
+        return;
+      }
+
+      const amount = parseFloat(document.getElementById("withdraw-amount-input").value || "0");
+      const currentBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
+
+      if (isNaN(amount) || amount < 1) {
+        showToast("Ingresa un monto válido de retiro (mínimo $1.00)");
+        return;
+      }
+
+      if (amount > currentBal) {
+        showToast("Saldo real verificado insuficiente para ese retiro");
+        return;
+      }
+
+      const res = await callBackend("/api/withdraw/request", {
+        amount: Number(amount.toFixed(2)),
+        payoutNetwork: state.payoutNetwork,
+        payoutAddress: state.payoutAddress.trim()
+      });
+
+      if (!res.ok) {
+        showToast(res.offline ? "Sin conexión para registrar el retiro" : (res.error || "Retiro rechazado por el servidor"));
+        return;
+      }
+
+      const withdrawRef = res.withdrawId || `RET-${Date.now().toString().slice(-6)}`;
+      if (typeof res.verifiedRealBalanceUsdt === "number") {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+      } else {
+        state.verifiedRealBalanceUsdt = Math.max(0, Number((currentBal - amount).toFixed(2)));
+      }
+
+      saveState();
+      render();
+      haptic("heavy");
+
+      lastWithdrawRequestText =
+        `Folio de retiro: ${withdrawRef} | Usuario: ${playerId} | Monto: $${amount.toFixed(2)} USDT | Red: ${state.payoutNetwork} | Destino: ${state.payoutAddress.trim()}`;
+
+      document.getElementById("withdraw-result-details").textContent =
+        `Solicitud registrada (${withdrawRef}) por $${amount.toFixed(2)} USDT hacia ${state.payoutNetwork}. Soporte verificará el folio en el servidor antes de pagar.`;
+      document.getElementById("withdraw-result-box").style.display = "block";
+      document.getElementById("withdraw-amount-input").value = "";
+      showToast(`Retiro ${withdrawRef} registrado en el servidor`);
+    });
+
+    document.getElementById("btn-send-withdraw-tg").addEventListener("click", () => {
+      sendDirectToSupport(lastWithdrawRequestText, "Abriendo chat de soporte...");
+    });
+
+    async function copyText(text, okMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(okMsg);
+      } catch {
+        showToast("Cópialo manualmente");
+      }
+    }
+
+    document.querySelectorAll(".nav-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        switchTab(btn.getAttribute("data-tab"));
+      });
+    });
+
+    render();
+    syncServerState(true);
+    setInterval(render, 2000);
+    setInterval(() => syncServerState(true), 30000);
+  </script>
+</body>
+</html>
