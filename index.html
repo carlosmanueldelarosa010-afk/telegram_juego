@@ -231,6 +231,7 @@
       cursor: pointer;
       color: #fff;
       background: var(--accent);
+      flex-shrink: 0;
     }
     .btn.sm { padding: 7px 10px; font-size: 11px; border-radius: 10px; }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -251,10 +252,7 @@
       font-family: inherit;
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 64px;
-    }
+    textarea { resize: vertical; min-height: 64px; }
 
     .notice {
       font-size: 12px;
@@ -438,7 +436,7 @@
     </div>
 
     <div class="sub-rate-bar">
-      <span>Producción de Rigs</span>
+      <span>Ritmo en ciclo actual (6h)</span>
       <strong id="rate-val" style="color:#6ee7b7;">0/h</strong>
     </div>
 
@@ -478,16 +476,16 @@
       </div>
     </section>
 
-    <!-- PESTAÑA 2: RIGS -->
+    <!-- PESTAÑA 2: MINERÍA & RENDIMIENTO -->
     <section id="tab-rigs" class="tab-content">
       <div class="card">
-        <div class="card-title">Acumulador de Rigs (tope 6h)</div>
+        <div class="card-title">Minería de monedas (ciclos de 6 horas)</div>
         <div class="card-desc">
-          Acumula monedas automáticamente incluso cuando estás fuera del bot (hasta un máximo de 6 horas). El límite de compra de cada Rig sube con tu rango de referidos.
+          Cada ciclo dura <strong>6 horas</strong>. Al completarse las 6 horas, reclama lo acumulado y vuelve a comprar tus equipos para iniciar otro ciclo. En <strong>Novato</strong> puedes tener <strong>1</strong> equipo por tipo (en <strong>Líder Supremo</strong> hasta <strong>3</strong>), y el precio sube en cada compra hasta su tope.
         </div>
         <div class="row-between">
           <div>
-            <div class="user-sub">Pendiente por reclamar</div>
+            <div class="user-sub">Pendiente por reclamar (ciclo 6h)</div>
             <div id="pending-coins" class="stat-value" style="font-size:22px; margin-top:2px;">0</div>
           </div>
           <button id="btn-claim" class="btn btn-green" type="button">Reclamar</button>
@@ -495,6 +493,19 @@
       </div>
 
       <div id="rigs-list"></div>
+
+      <div class="card">
+        <div class="card-title">Planes de rendimiento en Saldo real (+20% al vencer)</div>
+        <div class="card-desc">
+          Se compran con tu <strong>Saldo real verificado</strong>. Al cumplirse el plazo (7 o 30 días), reclámales y recibirás el capital + <strong>20%</strong>. Al terminar el plazo puedes volver a comprarlos.
+        </div>
+        <div id="yield-plans-list"></div>
+      </div>
+
+      <div class="card" id="active-yield-plans-card">
+        <div class="card-title">Mis planes de saldo real activos / finalizados</div>
+        <div id="active-yield-plans-list" class="user-sub">No tienes planes de saldo real registrados todavía.</div>
+      </div>
     </section>
 
     <!-- PESTAÑA 3: BOOST CRIPTO Y RECARGA DE SALDO REAL -->
@@ -502,7 +513,7 @@
       <div class="card">
         <div class="card-title">Recargar saldo real (USDT)</div>
         <div class="card-desc">
-          Ingresa el monto exacto que deseas recargar y envíalo al chat de soporte junto con tu captura.
+          Al generar la recarga se envía aviso automático al canal de soporte y puedes abrir el chat con tu comprobante.
         </div>
 
         <label class="user-sub" for="deposit-usdt-input">Monto a recargar (USDT)</label>
@@ -514,7 +525,7 @@
           <option value="USDT-TRC20">USDT (Red TRC20)</option>
         </select>
 
-        <button id="btn-generate-deposit" class="btn btn-green" type="button" style="width:100%;">Generar recarga y abrir soporte</button>
+        <button id="btn-generate-deposit" class="btn btn-green" type="button" style="width:100%;">Generar recarga y notificar a soporte</button>
 
         <div id="deposit-real-box" class="ref-box" style="display:none; margin-top:12px;">
           <div><strong>Monto a enviar:</strong> <span id="real-dep-amount">-</span> USDT (<span id="real-dep-net">-</span>)</div>
@@ -610,7 +621,6 @@
         </button>
       </div>
 
-      <!-- PROGRAMA DE INFLUENCER (50 REFERIDOS VERIFICADOS + 25 CON RECARGA REAL VERIFICADA -> MÍN. 6% POR RETIROS VERIFICADOS) -->
       <div class="card">
         <div class="card-title">Programa Influencer (mín. 6% por retiros verificados)</div>
         <div class="card-desc">
@@ -857,7 +867,7 @@
 
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="tab-game" type="button">Juego</button>
-    <button class="nav-btn" data-tab="tab-rigs" type="button">Rigs</button>
+    <button class="nav-btn" data-tab="tab-rigs" type="button">Minería</button>
     <button class="nav-btn" data-tab="tab-crypto" type="button">Boost</button>
     <button class="nav-btn" data-tab="tab-referrals" type="button">Referidos</button>
     <button class="nav-btn" data-tab="tab-redeem" type="button">Canjear</button>
@@ -867,7 +877,6 @@
   <script>
     const BOT_USERNAME = "cripto_game_breaking_bot";
     const SUPPORT_CHAT_URL = "https://t.me/Cripto_Game0";
-    // Configura aquí la URL de tu Worker/API de backend que valida initData, saldos, códigos y retiros:
     const API_BASE_URL = "https://autumn-band-e48ecripto-game-reportes.carlosmanueldelarosa010.workers.dev";
 
     const WALLETS = {
@@ -890,26 +899,61 @@
     };
 
     const REFERRAL_RANKS = [
-      { minInvites: 0,   name: "Novato",         boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 3,  rig_2: 5,  rig_3: 7  } },
-      { minInvites: 3,   name: "Empleado",       boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 4,  rig_2: 6,  rig_3: 9  } },
-      { minInvites: 8,   name: "Gerente 1",      boostBonus: 0.5, energyBonus: 120,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 5,  rig_2: 8,  rig_3: 11 } },
-      { minInvites: 15,  name: "Gerente 2",      boostBonus: 0.8, energyBonus: 200,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 6,  rig_2: 9,  rig_3: 13 } },
-      { minInvites: 25,  name: "Jefe",           boostBonus: 1.2, energyBonus: 300,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 7,  rig_2: 11, rig_3: 15 } },
-      { minInvites: 40,  name: "Líder",          boostBonus: 1.6, energyBonus: 450,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 8,  rig_2: 12, rig_3: 17 } },
-      { minInvites: 65,  name: "Profesional",    boostBonus: 2.2, energyBonus: 650,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 9,  rig_2: 14, rig_3: 18 } },
-      { minInvites: 100, name: "Líder Supremo",  boostBonus: 3.5, energyBonus: 1000, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 10, rig_2: 15, rig_3: 20 } }
+      { minInvites: 0,   name: "Novato",        boostBonus: 0.0, energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 3,   name: "Empleado",      boostBonus: 0.2, energyBonus: 50,   rankCoinsBonus: 100,  maxBuyBoost: 7.0,  rigLimits: { rig_1: 1, rig_2: 1, rig_3: 1 } },
+      { minInvites: 8,   name: "Gerente 1",     boostBonus: 0.5, energyBonus: 120,  rankCoinsBonus: 250,  maxBuyBoost: 9.0,  rigLimits: { rig_1: 2, rig_2: 1, rig_3: 1 } },
+      { minInvites: 15,  name: "Gerente 2",     boostBonus: 0.8, energyBonus: 200,  rankCoinsBonus: 500,  maxBuyBoost: 11.0, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 1 } },
+      { minInvites: 25,  name: "Jefe",          boostBonus: 1.2, energyBonus: 300,  rankCoinsBonus: 900,  maxBuyBoost: 13.5, rigLimits: { rig_1: 2, rig_2: 2, rig_3: 2 } },
+      { minInvites: 40,  name: "Líder",         boostBonus: 1.6, energyBonus: 450,  rankCoinsBonus: 1500, maxBuyBoost: 16.0, rigLimits: { rig_1: 3, rig_2: 2, rig_3: 2 } },
+      { minInvites: 65,  name: "Profesional",   boostBonus: 2.2, energyBonus: 650,  rankCoinsBonus: 2500, maxBuyBoost: 18.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 2 } },
+      { minInvites: 100, name: "Líder Supremo", boostBonus: 3.5, energyBonus: 1000, rankCoinsBonus: 5000, maxBuyBoost: 20.0, rigLimits: { rig_1: 3, rig_2: 3, rig_3: 3 } }
     ];
 
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
-    const MAX_ACCUM_SECONDS = 6 * 3600;
+    const CYCLE_DURATION_SECONDS = 6 * 3600; // 6 horas por ciclo de minería
     const ENERGY_REGEN_PER_SEC = 3;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v3";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v4";
 
+    // Cada rig tiene ciclo de 6 horas, costo escalonado hasta maxCost, y bono cuando se tienen los 3 activos en el ciclo
     const RIGS_CATALOG = [
-      { id: "rig_1", name: "Rig Básico", basePerHour: 120, cost: 150, minCap: 3, maxCap: 10 },
-      { id: "rig_2", name: "Rig Avanzado", basePerHour: 480, cost: 600, minCap: 5, maxCap: 15 },
-      { id: "rig_3", name: "Clúster Pro", basePerHour: 1800, cost: 2200, minCap: 7, maxCap: 20 }
+      {
+        id: "rig_1",
+        name: "Rig Básico",
+        singleCycleCoins: 2500,
+        tripleCycleCoins: 9000,
+        baseCost: 800,
+        costStep: 700,
+        maxCost: 5000,
+        maxCap: 3
+      },
+      {
+        id: "rig_2",
+        name: "Rig Avanzado",
+        singleCycleCoins: 8500,
+        tripleCycleCoins: 30000,
+        baseCost: 3000,
+        costStep: 2500,
+        maxCost: 18000,
+        maxCap: 3
+      },
+      {
+        id: "rig_3",
+        name: "Clúster Pro",
+        singleCycleCoins: 24000,
+        tripleCycleCoins: 85000,
+        baseCost: 9000,
+        costStep: 7000,
+        maxCost: 50000,
+        maxCap: 3
+      }
+    ];
+
+    const YIELD_PLANS_CATALOG = [
+      { id: "plan_30_7d",  name: "Plan Express 7D",  cost: 30,  days: 7,  rate: 0.20 },
+      { id: "plan_50_30d", name: "Plan Estándar 30D", cost: 50,  days: 30, rate: 0.20 },
+      { id: "plan_75_30d", name: "Plan Plus 30D",     cost: 75,  days: 30, rate: 0.20 },
+      { id: "plan_100_30d",name: "Plan Elite 30D",    cost: 100, days: 30, rate: 0.20 }
     ];
 
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -952,7 +996,6 @@
       return `${rawName}-${suffix}`;
     }
 
-    // Estado de juego y preferencias locales (el saldo real verificado y contadores de referidos/comisiones se sincronizan desde servidor)
     const defaultState = {
       coins: 0,
       verifiedRealBalanceUsdt: 0,
@@ -962,9 +1005,12 @@
       purchasedBoostMult: 1.0,
       productivityMultiplier: 1.0,
       boostCount: 0,
+      // Unidades activas del ciclo actual (6h) y compras acumuladas para escalar precio hasta maxCost
       rigs: { rig_1: 0, rig_2: 0, rig_3: 0 },
+      rigPurchasesCount: { rig_1: 0, rig_2: 0, rig_3: 0 },
+      cycleStartAt: null,
+      cycleCoinsClaimed: 0,
       lastTick: Date.now(),
-      lastClaim: Date.now(),
       referredBy: null,
       redeemedReferralCode: null,
       referralCode: null,
@@ -980,7 +1026,8 @@
       influencerApplication: null,
       influencerCommissionRate: INFLUENCER_REQUIREMENTS.minCommissionPercent,
       influencerEarnedUsdt: 0,
-      influencerWithdrawalsCount: 0
+      influencerWithdrawalsCount: 0,
+      activeYieldPlans: []
     };
 
     function loadState() {
@@ -996,17 +1043,11 @@
           verifiedFundedReferralCount: Math.max(0, Number(parsed.verifiedFundedReferralCount) || 0),
           verifiedWeeklyReferralCount: Math.max(0, Number(parsed.verifiedWeeklyReferralCount) || 0),
           weeklyLeaderboard: Array.isArray(parsed.weeklyLeaderboard) ? parsed.weeklyLeaderboard : [],
-          influencerCommissionRate: Math.max(
-            INFLUENCER_REQUIREMENTS.minCommissionPercent,
-            Number(parsed.influencerCommissionRate) || INFLUENCER_REQUIREMENTS.minCommissionPercent
-          ),
-          influencerEarnedUsdt: Math.max(0, Number(parsed.influencerEarnedUsdt) || 0),
-          influencerWithdrawalsCount: Math.max(0, Number(parsed.influencerWithdrawalsCount) || 0),
-          rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) }
+          activeYieldPlans: Array.isArray(parsed.activeYieldPlans) ? parsed.activeYieldPlans : [],
+          rigs: { ...defaultState.rigs, ...(parsed.rigs || {}) },
+          rigPurchasesCount: { ...defaultState.rigPurchasesCount, ...(parsed.rigPurchasesCount || {}) }
         };
-        if (!merged.referralCode) {
-          merged.referralCode = generateAutoReferralCode();
-        }
+        if (!merged.referralCode) merged.referralCode = generateAutoReferralCode();
         return merged;
       } catch {
         return { ...defaultState, referralCode: generateAutoReferralCode() };
@@ -1014,29 +1055,25 @@
     }
 
     let state = loadState();
-    if (!state.purchasedBoostMult || state.purchasedBoostMult < 1) {
-      state.purchasedBoostMult = Math.max(1.0, Number(state.productivityMultiplier) || 1.0);
-    }
-
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
+    function getTotalActiveRigs() {
+      return (state.rigs.rig_1 || 0) + (state.rigs.rig_2 || 0) + (state.rigs.rig_3 || 0);
+    }
+
     function getPlayerLevel() {
-      const totalRigs =
-        (state.rigs.rig_1 || 0) +
-        (state.rigs.rig_2 || 0) +
-        (state.rigs.rig_3 || 0);
-      return Math.max(1, state.tapLevel + totalRigs);
+      const totalPurchases =
+        (state.rigPurchasesCount?.rig_1 || 0) +
+        (state.rigPurchasesCount?.rig_2 || 0) +
+        (state.rigPurchasesCount?.rig_3 || 0);
+      return Math.max(1, state.tapLevel + totalPurchases);
     }
 
     function getLevelBaseEnergy(level) {
-      if (level >= 100) {
-        return 2000 + (level - 100) * 20;
-      }
-      if (level >= 50) {
-        return 1000 + Math.floor(((level - 50) / 50) * 1000);
-      }
+      if (level >= 100) return 2000 + (level - 100) * 20;
+      if (level >= 50) return 1000 + Math.floor(((level - 50) / 50) * 1000);
       return 100 + Math.floor(((level - 1) / 49) * 900);
     }
 
@@ -1051,9 +1088,7 @@
     function getCurrentReferralRank() {
       let current = REFERRAL_RANKS[0];
       for (const r of REFERRAL_RANKS) {
-        if ((state.verifiedReferralCount || 0) >= r.minInvites) {
-          current = r;
-        }
+        if ((state.verifiedReferralCount || 0) >= r.minInvites) current = r;
       }
       return current;
     }
@@ -1066,10 +1101,62 @@
 
     function getMaxRigCountForRank(rigId) {
       const rank = getCurrentReferralRank();
-      const rigMeta = RIGS_CATALOG.find((r) => r.id === rigId);
-      const fallback = rigMeta ? rigMeta.minCap : 3;
       const limit = rank?.rigLimits?.[rigId];
-      return typeof limit === "number" ? limit : fallback;
+      return typeof limit === "number" ? limit : 1;
+    }
+
+    function getNextRigCost(rig) {
+      const purchases = state.rigPurchasesCount?.[rig.id] || 0;
+      return Math.min(rig.maxCost, rig.baseCost + purchases * rig.costStep);
+    }
+
+    // Calcula el total de monedas que genera el ciclo de 6 horas con los rigs actuales
+    function getCycleTotalCoins() {
+      let total = 0;
+      for (const rig of RIGS_CATALOG) {
+        const count = Math.min(rig.maxCap, state.rigs[rig.id] || 0);
+        if (count >= 3) {
+          total += rig.tripleCycleCoins;
+        } else if (count > 0) {
+          total += count * rig.singleCycleCoins;
+        }
+      }
+      return Math.round(total * state.productivityMultiplier);
+    }
+
+    // Al cumplirse las 6 horas (CYCLE_DURATION_SECONDS), el ciclo expira y los rigs del ciclo deben comprarse nuevamente
+    function checkMiningCycleExpiration(now = Date.now()) {
+      if (getTotalActiveRigs() <= 0 || !state.cycleStartAt) return;
+      const elapsedSec = (now - state.cycleStartAt) / 1000;
+      if (elapsedSec >= CYCLE_DURATION_SECONDS) {
+        state.rigs = { rig_1: 0, rig_2: 0, rig_3: 0 };
+        state.cycleStartAt = null;
+        state.cycleCoinsClaimed = 0;
+      }
+    }
+
+    function getPendingCoins() {
+      checkMiningCycleExpiration();
+      if (getTotalActiveRigs() <= 0 || !state.cycleStartAt) return 0;
+      const now = Date.now();
+      const elapsedSec = Math.max(0, Math.min(CYCLE_DURATION_SECONDS, (now - state.cycleStartAt) / 1000));
+      const cycleTotal = getCycleTotalCoins();
+      const accruedSoFar = Math.floor((elapsedSec / CYCLE_DURATION_SECONDS) * cycleTotal);
+      return Math.max(0, accruedSoFar - (state.cycleCoinsClaimed || 0));
+    }
+
+    function getRemainingCycleSeconds() {
+      checkMiningCycleExpiration();
+      if (getTotalActiveRigs() <= 0 || !state.cycleStartAt) return 0;
+      const elapsedSec = Math.floor((Date.now() - state.cycleStartAt) / 1000);
+      return Math.max(0, CYCLE_DURATION_SECONDS - elapsedSec);
+    }
+
+    function formatDuration(sec) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
     }
 
     function isInfluencerEligible() {
@@ -1080,6 +1167,7 @@
 
     function syncRankAndBoostBenefits() {
       checkWeeklyReset();
+      checkMiningCycleExpiration();
       const rank = getCurrentReferralRank();
       const level = getPlayerLevel();
       const prevMax = state.maxEnergy || 100;
@@ -1143,16 +1231,13 @@
     }
 
     function haptic(type = "light") {
-      try {
-        tg?.HapticFeedback?.impactOccurred(type);
-      } catch {}
+      try { tg?.HapticFeedback?.impactOccurred(type); } catch {}
     }
 
     function buildSupportChatUrl(messageText = "") {
       const clean = (messageText || "").trim();
       if (!clean) return SUPPORT_CHAT_URL;
-      const encoded = encodeURIComponent(clean.slice(0, 1200));
-      return `${SUPPORT_CHAT_URL}?text=${encoded}`;
+      return `${SUPPORT_CHAT_URL}?text=${encodeURIComponent(clean.slice(0, 1200))}`;
     }
 
     function openTelegramLink(url) {
@@ -1166,9 +1251,7 @@
     }
 
     async function callBackend(path, payload = {}) {
-      if (!API_BASE_URL) {
-        return { ok: false, offline: true, error: "Backend no configurado" };
-      }
+      if (!API_BASE_URL) return { ok: false, offline: true, error: "Backend no configurado" };
       try {
         const resp = await fetch(`${API_BASE_URL}${path}`, {
           method: "POST",
@@ -1182,9 +1265,7 @@
           })
         });
         const data = await resp.json().catch(() => null);
-        if (!resp.ok || !data) {
-          return { ok: false, error: data?.error || "Error del servidor" };
-        }
+        if (!resp.ok || !data) return { ok: false, error: data?.error || "Error del servidor" };
         return data;
       } catch {
         return { ok: false, offline: true, error: "Sin conexión con el servidor" };
@@ -1192,9 +1273,7 @@
     }
 
     async function syncServerState(silent = true) {
-      const data = await callBackend("/api/user/state", {
-        referralCode: state.referralCode
-      });
+      const data = await callBackend("/api/user/state", { referralCode: state.referralCode });
       if (!data || !data.ok) {
         if (!silent && data?.error) showToast(data.error);
         return;
@@ -1226,6 +1305,9 @@
       if (data.redeemedReferralCode) {
         state.redeemedReferralCode = String(data.redeemedReferralCode);
       }
+      if (Array.isArray(data.activeYieldPlans)) {
+        state.activeYieldPlans = data.activeYieldPlans;
+      }
       if (Array.isArray(data.weeklyLeaderboard)) {
         state.weeklyLeaderboard = data.weeklyLeaderboard;
       }
@@ -1235,20 +1317,16 @@
     }
 
     async function sendDirectToSupport(messageText = "", toastMsg = "Abriendo chat de soporte...") {
-      const clean = (messageText || "").trim();
-      const targetUrl = buildSupportChatUrl(clean);
-      openTelegramLink(targetUrl);
+      openTelegramLink(buildSupportChatUrl((messageText || "").trim()));
       showToast(toastMsg);
     }
 
     function isBoostRequiredBeforeNextLevel() {
-      const nextLevel = getPlayerLevel() + 1;
-      return nextLevel >= REQUIRED_LEVEL_FOR_BOOST && state.boostCount <= 0;
+      return getPlayerLevel() + 1 >= REQUIRED_LEVEL_FOR_BOOST && state.boostCount <= 0;
     }
 
     function hasValidWallet() {
-      const addr = (state.payoutAddress || "").trim();
-      return addr.length >= 16;
+      return (state.payoutAddress || "").trim().length >= 16;
     }
 
     function canAccessRedeem() {
@@ -1263,37 +1341,20 @@
       return Math.max(1, Math.round(state.tapLevel * state.productivityMultiplier));
     }
 
-    function getBaseHourlyRate() {
-      let total = 0;
-      for (const rig of RIGS_CATALOG) {
-        total += (state.rigs[rig.id] || 0) * rig.basePerHour;
-      }
-      return total;
-    }
-
     function getEffectiveHourlyRate() {
-      return Math.round(getBaseHourlyRate() * state.productivityMultiplier);
-    }
-
-    function getPendingCoins() {
-      const now = Date.now();
-      const elapsedSec = Math.max(0, Math.min(MAX_ACCUM_SECONDS, (now - state.lastClaim) / 1000));
-      const perSecond = getEffectiveHourlyRate() / 3600;
-      return Math.floor(elapsedSec * perSecond);
+      return Math.round(getCycleTotalCoins() / 6);
     }
 
     function renderAvatar(fullName) {
       const imgEl = document.getElementById("avatar-img");
       const fallbackEl = document.getElementById("avatar-fallback");
       const photoUrl = state.customAvatar || tgUser?.photo_url || "";
-
       const initials = (fullName || "CG")
         .split(" ")
         .filter(Boolean)
         .slice(0, 2)
         .map((p) => p[0].toUpperCase())
         .join("") || "CG";
-
       fallbackEl.textContent = initials;
 
       if (photoUrl) {
@@ -1316,32 +1377,29 @@
       const el = document.createElement("div");
       el.className = "float-gain";
       el.textContent = `+${amount.toLocaleString()}`;
-
       const offsetX = Math.floor(Math.random() * 70) - 35;
       el.style.left = `calc(50% + ${offsetX}px)`;
       el.style.top = "28px";
       stage.appendChild(el);
-
       btn.classList.remove("tap-pulse");
       void btn.offsetWidth;
       btn.classList.add("tap-pulse");
-
-      setTimeout(() => {
-        el.remove();
-      }, 720);
+      setTimeout(() => el.remove(), 720);
     }
 
-    function renderRigs() {
+    function renderRigsAndYieldPlans() {
+      checkMiningCycleExpiration();
       const container = document.getElementById("rigs-list");
       const rank = getCurrentReferralRank();
+      const remSec = getRemainingCycleSeconds();
       container.textContent = "";
 
       RIGS_CATALOG.forEach((rig) => {
         const count = state.rigs[rig.id] || 0;
         const maxAllowed = getMaxRigCountForRank(rig.id);
         const reachedLimit = count >= maxAllowed;
-        const cost = Math.floor(rig.cost * Math.pow(1.45, count));
-        const sixHourGain = Math.round(rig.basePerHour * 6 * state.productivityMultiplier);
+        const cost = getNextRigCost(rig);
+        const currentOutput = count >= 3 ? rig.tripleCycleCoins : count * rig.singleCycleCoins;
 
         const card = document.createElement("div");
         card.className = "card";
@@ -1352,20 +1410,25 @@
         const info = document.createElement("div");
         const title = document.createElement("div");
         title.className = "card-title";
-        title.textContent = `${rig.name} (${count} / ${maxAllowed})`;
+        title.textContent = `${rig.name} (${count} / ${maxAllowed} en rango · máx. ${rig.maxCap})`;
 
         const desc = document.createElement("div");
         desc.className = "card-desc";
         desc.style.marginBottom = "2px";
-        desc.textContent = `+${rig.basePerHour}/h base · +${sixHourGain.toLocaleString()} en 6h`;
+        desc.textContent =
+          `1 equipo: ${rig.singleCycleCoins.toLocaleString()} / 6h · ` +
+          `3 equipos juntos: ${rig.tripleCycleCoins.toLocaleString()} / 6h` +
+          (count > 0 ? ` · Activo ciclo: ${currentOutput.toLocaleString()}` : "");
 
         const sub = document.createElement("div");
         sub.className = "user-sub";
         if (reachedLimit) {
           sub.style.color = "#fcd34d";
-          sub.textContent = `Límite alcanzado (${count}/${maxAllowed}) en rango ${rank.name}. Sube de rango (máx. ${rig.maxCap}).`;
+          sub.textContent = `Tope en rango ${rank.name} (${count}/${maxAllowed}) · Próximo costo: ${cost.toLocaleString()} (máx. ${rig.maxCost.toLocaleString()})`;
         } else {
-          sub.textContent = `Costo: ${cost.toLocaleString()} monedas · Tope rango ${rank.name}: ${count}/${maxAllowed} (máx. ${rig.maxCap})`;
+          sub.textContent =
+            `Costo: ${cost.toLocaleString()} monedas (sube hasta ${rig.maxCost.toLocaleString()}) · ` +
+            (remSec > 0 ? `Restante ciclo: ${formatDuration(remSec)}` : "Inicia ciclo de 6h al comprar");
         }
 
         info.appendChild(title);
@@ -1375,24 +1438,32 @@
         const btn = document.createElement("button");
         btn.className = "btn";
         btn.type = "button";
-        btn.textContent = reachedLimit ? "Límite rango" : "Comprar";
+        btn.textContent = reachedLimit ? "Tope rango" : "Comprar (6h)";
         btn.disabled = reachedLimit || state.coins < cost;
         btn.addEventListener("click", () => {
+          checkMiningCycleExpiration();
           const currentCount = state.rigs[rig.id] || 0;
           const allowed = getMaxRigCountForRank(rig.id);
           const currentRank = getCurrentReferralRank();
           if (currentCount >= allowed) {
-            showToast(`Límite de ${allowed} ${rig.name} alcanzado para tu rango ${currentRank.name}`);
+            showToast(`En rango ${currentRank.name} puedes tener hasta ${allowed} ${rig.name}`);
             return;
           }
-          const rigCost = Math.floor(rig.cost * Math.pow(1.45, currentCount));
+          const rigCost = getNextRigCost(rig);
           if (state.coins < rigCost) return;
+
           state.coins -= rigCost;
           state.rigs[rig.id] = currentCount + 1;
+          state.rigPurchasesCount[rig.id] = (state.rigPurchasesCount[rig.id] || 0) + 1;
+          if (!state.cycleStartAt) {
+            state.cycleStartAt = Date.now();
+            state.cycleCoinsClaimed = 0;
+          }
+
           haptic("medium");
           saveState();
           render();
-          showToast(`${rig.name} adquirido (${state.rigs[rig.id]}/${allowed})`);
+          showToast(`${rig.name} activado por 6h`);
         });
 
         row.appendChild(info);
@@ -1400,6 +1471,135 @@
         card.appendChild(row);
         container.appendChild(card);
       });
+
+      // Planes de rendimiento en Saldo real (+20% al finalizar el ciclo)
+      const plansContainer = document.getElementById("yield-plans-list");
+      plansContainer.textContent = "";
+      const verifiedBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
+
+      YIELD_PLANS_CATALOG.forEach((plan) => {
+        const bonus = Number((plan.cost * plan.rate).toFixed(2));
+        const totalOut = Number((plan.cost + bonus).toFixed(2));
+
+        const item = document.createElement("div");
+        item.className = "tier-item";
+
+        const top = document.createElement("div");
+        top.className = "row-between";
+
+        const left = document.createElement("div");
+        const pTitle = document.createElement("strong");
+        pTitle.textContent = `${plan.name} — $${plan.cost.toFixed(2)} USDT`;
+
+        const pSub = document.createElement("div");
+        pSub.className = "user-sub";
+        pSub.style.marginTop = "3px";
+        pSub.textContent = `Duración: ${plan.days} días · Al finalizar (+20%): +$${bonus.toFixed(2)} ($${totalOut.toFixed(2)} total) · Renovable`;
+
+        left.appendChild(pTitle);
+        left.appendChild(pSub);
+
+        const buyBtn = document.createElement("button");
+        buyBtn.className = "btn btn-green sm";
+        buyBtn.type = "button";
+        buyBtn.textContent = "Activar plan";
+        buyBtn.disabled = verifiedBal < plan.cost;
+        buyBtn.addEventListener("click", async () => {
+          if (verifiedBal < plan.cost) {
+            showToast("Saldo real verificado insuficiente para este plan");
+            return;
+          }
+          const res = await callBackend("/api/yield-plan/buy", { planId: plan.id });
+          if (!res.ok) {
+            showToast(res.offline ? "Sin conexión con el servidor" : (res.error || "No se pudo activar el plan"));
+            return;
+          }
+          if (typeof res.verifiedRealBalanceUsdt === "number") {
+            state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+          }
+          if (res.plan) {
+            state.activeYieldPlans = Array.isArray(state.activeYieldPlans) ? state.activeYieldPlans : [];
+            state.activeYieldPlans.push(res.plan);
+          }
+          saveState();
+          render();
+          haptic("heavy");
+          showToast(`${plan.name} activado`);
+        });
+
+        top.appendChild(left);
+        top.appendChild(buyBtn);
+        item.appendChild(top);
+        plansContainer.appendChild(item);
+      });
+
+      // Listado de planes activos / finalizados del usuario
+      const activeListEl = document.getElementById("active-yield-plans-list");
+      const myPlans = Array.isArray(state.activeYieldPlans) ? state.activeYieldPlans : [];
+      activeListEl.textContent = "";
+
+      if (myPlans.length === 0) {
+        activeListEl.textContent = "No tienes planes de saldo real registrados todavía.";
+      } else {
+        myPlans.slice().reverse().forEach((p) => {
+          const box = document.createElement("div");
+          box.className = "tier-item";
+
+          const now = Date.now();
+          const expired = now >= Number(p.endsAt || 0);
+          const leftSec = Math.max(0, Math.floor((Number(p.endsAt || 0) - now) / 1000));
+
+          const row = document.createElement("div");
+          row.className = "row-between";
+
+          const det = document.createElement("div");
+          const h = document.createElement("strong");
+          h.textContent = `${p.label} (${p.orderId})`;
+
+          const d = document.createElement("div");
+          d.className = "user-sub";
+          d.style.marginTop = "3px";
+          if (p.claimed) {
+            d.style.color = "#6ee7b7";
+            d.textContent = `Cobrado: $${Number(p.totalReturn || 0).toFixed(2)} USDT · Puedes comprar uno nuevo.`;
+          } else if (expired) {
+            d.style.color = "#6ee7b7";
+            d.textContent = `Completado (${p.days}d). Listo para cobrar $${Number(p.totalReturn || 0).toFixed(2)} USDT (+20%).`;
+          } else {
+            d.textContent = `En curso · Restante: ${formatDuration(leftSec)} · Al vencer: $${Number(p.totalReturn || 0).toFixed(2)} USDT`;
+          }
+
+          det.appendChild(h);
+          det.appendChild(d);
+          row.appendChild(det);
+
+          if (!p.claimed && expired) {
+            const claimBtn = document.createElement("button");
+            claimBtn.className = "btn btn-green sm";
+            claimBtn.type = "button";
+            claimBtn.textContent = "Cobrar +20%";
+            claimBtn.addEventListener("click", async () => {
+              const res = await callBackend("/api/yield-plan/claim", { orderId: p.orderId });
+              if (!res.ok) {
+                showToast(res.error || "No se pudo reclamar el plan");
+                return;
+              }
+              p.claimed = true;
+              if (typeof res.verifiedRealBalanceUsdt === "number") {
+                state.verifiedRealBalanceUsdt = Math.max(0, Number(res.verifiedRealBalanceUsdt));
+              }
+              saveState();
+              render();
+              haptic("heavy");
+              showToast(`Cobrado +$${Number(res.payout || p.totalReturn || 0).toFixed(2)} USDT`);
+            });
+            row.appendChild(claimBtn);
+          }
+
+          box.appendChild(row);
+          activeListEl.appendChild(box);
+        });
+      }
     }
 
     function renderInfluencerSection() {
@@ -1494,8 +1694,8 @@
       const rank = getCurrentReferralRank();
 
       document.getElementById("my-referral-code").textContent = state.referralCode;
-      const inviteUrl = `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`;
-      document.getElementById("my-invite-link").textContent = inviteUrl;
+      document.getElementById("my-invite-link").textContent =
+        `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`;
 
       const count = Number(state.verifiedReferralCount) || 0;
       const weeklyCount = Number(state.verifiedWeeklyReferralCount) || 0;
@@ -1524,7 +1724,7 @@
 
       document.getElementById("current-rank-summary").textContent =
         `Rango actual: ${rank.name} (${count} invitados verificados) · Límite boost: x${getMaxPurchasableBoost().toFixed(1)} · ` +
-        `Límite Rigs: ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3} · ` +
+        `Límite ciclo 6h (Bás/Avz/Pro): ${rank.rigLimits.rig_1} / ${rank.rigLimits.rig_2} / ${rank.rigLimits.rig_3} · ` +
         `Bonus rango: +${rank.boostBonus.toFixed(1)}x`;
 
       const ranksListEl = document.getElementById("ranks-list");
@@ -1547,7 +1747,7 @@
         const rigsLine = document.createElement("div");
         rigsLine.className = "user-sub";
         rigsLine.style.marginTop = "3px";
-        rigsLine.textContent = `Límite Rigs (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3} · Límite boost: x${r.maxBuyBoost.toFixed(1)}`;
+        rigsLine.textContent = `Límite ciclo 6h (Bás/Avz/Pro): ${r.rigLimits.rig_1} / ${r.rigLimits.rig_2} / ${r.rigLimits.rig_3} · Límite boost: x${r.maxBuyBoost.toFixed(1)}`;
 
         const perksLine = document.createElement("div");
         perksLine.className = "user-sub";
@@ -1680,9 +1880,7 @@
         tgUser && tgUser.username ? `${fullName} (@${tgUser.username})` : fullName;
 
       renderAvatar(fullName);
-
-      document.getElementById("ref-info").textContent =
-        `Rango: ${rank.name} · Código: ${state.referralCode}`;
+      document.getElementById("ref-info").textContent = `Rango: ${rank.name} · Código: ${state.referralCode}`;
 
       const verifiedBal = Math.max(0, Number(state.verifiedRealBalanceUsdt) || 0);
       const playerLevel = getPlayerLevel();
@@ -1711,7 +1909,7 @@
       document.getElementById("pending-coins").textContent = pending.toLocaleString();
       document.getElementById("btn-claim").disabled = pending <= 0;
 
-      renderRigs();
+      renderRigsAndYieldPlans();
       renderReferralsSection();
       renderRedeemSection();
       renderWithdrawSection();
@@ -1721,13 +1919,8 @@
     document.getElementById("payout-address-input").value = state.payoutAddress || "";
     document.getElementById("withdraw-address-quick-input").value = state.payoutAddress || "";
 
-    document.getElementById("real-balance-card").addEventListener("click", () => {
-      switchTab("tab-withdraw");
-    });
-
-    document.getElementById("btn-change-avatar").addEventListener("click", () => {
-      document.getElementById("avatar-file-input").click();
-    });
+    document.getElementById("real-balance-card").addEventListener("click", () => switchTab("tab-withdraw"));
+    document.getElementById("btn-change-avatar").addEventListener("click", () => document.getElementById("avatar-file-input").click());
 
     document.getElementById("avatar-file-input").addEventListener("change", (ev) => {
       const file = ev.target.files?.[0];
@@ -1777,22 +1970,20 @@
       showToast(`Toque subido a nivel ${state.tapLevel}`);
     });
 
-    document.getElementById("btn-go-boost-gate").addEventListener("click", () => {
-      switchTab("tab-crypto");
-    });
+    document.getElementById("btn-go-boost-gate").addEventListener("click", () => switchTab("tab-crypto"));
 
     document.getElementById("btn-claim").addEventListener("click", () => {
       const pending = getPendingCoins();
       if (pending <= 0) return;
       state.coins += pending;
-      state.lastClaim = Date.now();
+      state.cycleCoinsClaimed = (state.cycleCoinsClaimed || 0) + pending;
       haptic("heavy");
       saveState();
       render();
       showToast(`Reclamaste +${pending.toLocaleString()} monedas`);
     });
 
-    // ===== Referidos y canje validado por servidor =====
+    // Referidos
     let lastInfluencerReportText = "";
 
     async function applyReferralCode(rawCode, fromStartParam = false) {
@@ -1802,22 +1993,16 @@
         if (!fromStartParam) showToast("Escribe un código de invitación");
         return;
       }
-
       if (state.redeemedReferralCode) {
         if (!fromStartParam) showToast("Solo puedes canjear 1 código de invitación por usuario");
         return;
       }
-
       if (code === state.referralCode) {
         if (!fromStartParam) showToast("No puedes canjear tu propio código");
         return;
       }
 
-      const res = await callBackend("/api/referral/redeem", {
-        code,
-        ownReferralCode: state.referralCode
-      });
-
+      const res = await callBackend("/api/referral/redeem", { code, ownReferralCode: state.referralCode });
       if (!res.ok) {
         if (!fromStartParam) {
           showToast(res.offline ? "Sin conexión para validar el código de invitación" : (res.error || "Código no válido"));
@@ -1833,38 +2018,28 @@
       render();
       haptic("heavy");
 
-      const chainBox = document.getElementById("referral-chain-box");
-      const detailsEl = document.getElementById("referral-chain-details");
-      detailsEl.textContent =
+      document.getElementById("referral-chain-details").textContent =
         `Código canjeado y registrado en el servidor: ${code}. Recibiste +${Number(res.inviteeCoins) || REFERRAL_REWARDS.inviteeCoins} monedas.`;
-      chainBox.style.display = "block";
+      document.getElementById("referral-chain-box").style.display = "block";
       showToast("Código de invitación canjeado");
     }
 
-    document.getElementById("btn-copy-ref-code").addEventListener("click", () => {
-      copyText(state.referralCode, "Código de referido copiado");
-    });
+    document.getElementById("btn-copy-ref-code").addEventListener("click", () => copyText(state.referralCode, "Código de referido copiado"));
 
     document.getElementById("btn-share-ref-tg").addEventListener("click", () => {
-      const inviteUrl = encodeURIComponent(
-        `https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`
-      );
-      const text = encodeURIComponent(
-        `¡Únete a Cripto Game con mi código ${state.referralCode}!`
-      );
+      const inviteUrl = encodeURIComponent(`https://t.me/${BOT_USERNAME}/app?startapp=${encodeURIComponent(state.referralCode)}`);
+      const text = encodeURIComponent(`¡Únete a Cripto Game con mi código ${state.referralCode}!`);
       openTelegramLink(`https://t.me/share/url?url=${inviteUrl}&text=${text}`);
     });
 
     document.getElementById("btn-register-code-tg").addEventListener("click", () => {
-      const regText = `Código de referido: ${state.referralCode} | Usuario: ${playerId}`;
-      sendDirectToSupport(regText, "Abriendo chat de soporte...");
+      sendDirectToSupport(`Código de referido: ${state.referralCode} | Usuario: ${playerId}`, "Abriendo chat de soporte...");
     });
 
     document.getElementById("btn-apply-referral-code").addEventListener("click", () => {
       applyReferralCode(document.getElementById("input-referral-code").value, false);
     });
 
-    // ===== Solicitud de Influencer y sincronización de comisiones verificadas =====
     function composeInfluencerMessage(app) {
       return (
         `Solicitud Influencer: ${app.id} | Usuario: ${playerId} | Creador: ${app.handle} | ` +
@@ -1896,14 +2071,7 @@
         isNaN(rawPct) ? INFLUENCER_REQUIREMENTS.minCommissionPercent : Number(rawPct.toFixed(2))
       );
 
-      const res = await callBackend("/api/influencer/apply", {
-        handle,
-        platform,
-        link,
-        commissionPct,
-        notes
-      });
-
+      const res = await callBackend("/api/influencer/apply", { handle, platform, link, commissionPct, notes });
       if (!res.ok) {
         showToast(res.offline ? "Sin conexión para registrar la solicitud" : (res.error || "No se pudo enviar la solicitud"));
         return;
@@ -1948,10 +2116,10 @@
       applyReferralCode(startParam, true);
     }
 
-    // ===== Recarga y acreditación validada en servidor =====
+    // Recarga de saldo real (notifica al canal de soporte vía Worker + permite abrir chat con comprobante)
     let lastRealDepositReport = "";
 
-    document.getElementById("btn-generate-deposit").addEventListener("click", () => {
+    document.getElementById("btn-generate-deposit").addEventListener("click", async () => {
       const rawAmount = parseFloat(document.getElementById("deposit-usdt-input").value || "0");
       if (isNaN(rawAmount) || rawAmount < 1) {
         showToast("Ingresa un monto mínimo de 1.00 USDT");
@@ -1963,16 +2131,24 @@
       const exactAmount = Number(rawAmount.toFixed(2));
       const amountStr = exactAmount.toFixed(2);
 
+      const res = await callBackend("/api/deposit/request", {
+        amount: exactAmount,
+        network: net,
+        walletAddress: addr
+      });
+
+      const folio = res?.depositId ? ` (${res.depositId})` : "";
       document.getElementById("real-dep-amount").textContent = amountStr;
       document.getElementById("real-dep-net").textContent = net;
       document.getElementById("real-dep-address").textContent = addr;
       document.getElementById("deposit-real-box").style.display = "block";
 
       lastRealDepositReport =
-        `Recarga USDT | Usuario: ${playerId} | Monto: ${amountStr} USDT | Red: ${net} | Billetera: ${addr}`;
+        `Recarga USDT${folio} | Usuario: ${playerId} | Monto: ${amountStr} USDT | Red: ${net} | Billetera: ${addr}`;
 
-      document.getElementById("auto-report-status").textContent =
-        "Envía el comprobante al chat de soporte; el código de acreditación se emite tras verificar el pago.";
+      document.getElementById("auto-report-status").textContent = res?.ok
+        ? `Aviso enviado a soporte (${res.depositId}). Adjunta tu captura en el chat de soporte.`
+        : "No se pudo confirmar el aviso automático; abre el chat de soporte para enviar tu comprobante.";
 
       haptic("light");
       sendDirectToSupport(lastRealDepositReport, `Recarga por ${amountStr} USDT... abriendo soporte`);
@@ -2024,7 +2200,7 @@
       showToast(`+$${credited.toFixed(2)} acreditados a tu Saldo real verificado`);
     });
 
-    // ===== Comprar boost con saldo real verificado =====
+    // Comprar boost con saldo real verificado
     document.getElementById("btn-buy-boost-with-balance").addEventListener("click", async () => {
       syncRankAndBoostBenefits();
       const rank = getCurrentReferralRank();
@@ -2056,12 +2232,7 @@
         return;
       }
 
-      const res = await callBackend("/api/boost/buy", {
-        addBoost,
-        price,
-        maxBuyBoost
-      });
-
+      const res = await callBackend("/api/boost/buy", { addBoost, price, maxBuyBoost });
       if (!res.ok) {
         showToast(res.offline ? "Sin conexión para validar la compra" : (res.error || "No se pudo completar la compra"));
         return;
@@ -2089,7 +2260,7 @@
       showToast(`+${addBoost.toFixed(1)}x acumulado`);
     });
 
-    // ===== Billetera y canje de monedas =====
+    // Billetera y canje de monedas
     let lastRedeemRequestText = "";
 
     function saveWalletAddress(rawAddr, rawNet) {
@@ -2112,17 +2283,11 @@
     }
 
     document.getElementById("btn-save-wallet").addEventListener("click", () => {
-      saveWalletAddress(
-        document.getElementById("payout-address-input").value,
-        document.getElementById("payout-network").value
-      );
+      saveWalletAddress(document.getElementById("payout-address-input").value, document.getElementById("payout-network").value);
     });
 
     document.getElementById("btn-save-wallet-from-withdraw").addEventListener("click", () => {
-      saveWalletAddress(
-        document.getElementById("withdraw-address-quick-input").value,
-        state.payoutNetwork || "USDT-TON"
-      );
+      saveWalletAddress(document.getElementById("withdraw-address-quick-input").value, state.payoutNetwork || "USDT-TON");
     });
 
     document.getElementById("redeem-tier-select").addEventListener("change", updateSelectedTierInfo);
@@ -2181,7 +2346,7 @@
       sendDirectToSupport(lastRedeemRequestText, "Abriendo chat de soporte...");
     });
 
-    // ===== Retirar saldo real verificado =====
+    // Retirar saldo real verificado
     let lastWithdrawRequestText = "";
 
     document.getElementById("btn-submit-real-withdraw").addEventListener("click", async () => {
@@ -2198,7 +2363,6 @@
         showToast("Ingresa un monto válido de retiro (mínimo $1.00)");
         return;
       }
-
       if (amount > currentBal) {
         showToast("Saldo real verificado insuficiente para ese retiro");
         return;
@@ -2250,9 +2414,7 @@
     }
 
     document.querySelectorAll(".nav-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        switchTab(btn.getAttribute("data-tab"));
-      });
+      btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab")));
     });
 
     render();
