@@ -120,7 +120,6 @@
     }
 
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
-    .stats-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
     .sub-rate-bar {
       background: var(--card);
       border: 1px solid var(--border);
@@ -971,7 +970,6 @@
 
     const MAX_TOTAL_BOOST_CAP = 20.0;
 
-    // El boost NO aumenta al invitar ni subir de rango: la única forma de obtenerlo es comprarlo con saldo real.
     const REFERRAL_RANKS = [
       { minInvites: 0,   name: "Novato",        maxTapCoins: 45,  refillSeconds: 5400,  tapEnergyCost: 1,  energyBonus: 0,    rankCoinsBonus: 0,    maxBuyBoost: 5.0 },
       { minInvites: 3,   name: "Empleado",      maxTapCoins: 48,  refillSeconds: 5400,  tapEnergyCost: 1,  energyBonus: 100,  rankCoinsBonus: 100,  maxBuyBoost: 7.0 },
@@ -986,10 +984,14 @@
     const MIN_REDEEM_LEVEL = 12;
     const REQUIRED_LEVEL_FOR_BOOST = 12;
     const MIN_WITHDRAW_USDT = 10;
-    const STORAGE_KEY = "tg_mini_game_client_cache_v10";
+    const STORAGE_KEY = "tg_mini_game_client_cache_v11";
+    const LEGACY_STORAGE_KEYS = [
+      "tg_mini_game_client_cache_v10",
+      "tg_mini_game_client_cache_v9",
+      "tg_mini_game_client_cache_v8",
+      "tg_mini_game_client_cache_v7"
+    ];
 
-    // Cada rig tiene niveles 1, 2 y 3 (0 = no comprada, 1 = nivel 1, 2 = nivel 2, 3 = nivel 3)
-    // Nivel 1 y Nivel 2 duran 6 horas; Nivel 3 dura 12 horas.
     const RIGS_CATALOG = [
       {
         id: "rig_1",
@@ -1089,6 +1091,7 @@
         weeklyLeaderboard: [],
         weekAnchorKey: getCurrentSundayMidnightKey(),
         awardedRankMinInvites: 0,
+        notifiedRankMinInvites: 0,
         customAvatar: null,
         payoutNetwork: "USDT-TON",
         payoutAddress: "",
@@ -1104,15 +1107,30 @@
       };
     }
 
+    function readRawSavedState() {
+      const currentRaw = localStorage.getItem(STORAGE_KEY);
+      if (currentRaw) return currentRaw;
+      for (const oldKey of LEGACY_STORAGE_KEYS) {
+        const oldRaw = localStorage.getItem(oldKey);
+        if (oldRaw) {
+          localStorage.setItem(STORAGE_KEY, oldRaw);
+          return oldRaw;
+        }
+      }
+      return null;
+    }
+
     function loadState() {
       const freshBase = createFreshDefaultState();
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = readRawSavedState();
         if (!raw) return freshBase;
         const parsed = JSON.parse(raw);
         const merged = {
           ...freshBase,
           ...parsed,
+          coins: Math.max(0, Number(parsed.coins) || 0),
+          tapLevel: Math.max(1, Number(parsed.tapLevel) || 1),
           verifiedRealBalanceUsdt: Math.max(0, Number(parsed.verifiedRealBalanceUsdt) || 0),
           verifiedReferralCount: Math.max(0, Number(parsed.verifiedReferralCount) || 0),
           verifiedFundedReferralCount: Math.max(0, Number(parsed.verifiedFundedReferralCount) || 0),
@@ -1213,6 +1231,11 @@
       return current;
     }
 
+    function getPreviousReferralRank(rank) {
+      const idx = REFERRAL_RANKS.findIndex((r) => r.name === rank.name);
+      return idx > 0 ? REFERRAL_RANKS[idx - 1] : REFERRAL_RANKS[0];
+    }
+
     function getNextReferralRank() {
       const current = getCurrentReferralRank();
       const idx = REFERRAL_RANKS.findIndex((r) => r.name === current.name);
@@ -1261,6 +1284,8 @@
     function syncRankAndBoostBenefits() {
       checkWeeklyReset();
       const rank = getCurrentReferralRank();
+      const prevNotified = Number(state.notifiedRankMinInvites) || 0;
+      const prevRank = getPreviousReferralRank(rank);
       const prevMax = state.maxEnergy || 100;
 
       state.maxEnergy = 100 + (Number(rank.energyBonus) || 0);
@@ -1274,6 +1299,15 @@
       if (rank.minInvites > (state.awardedRankMinInvites || 0) && rank.rankCoinsBonus > 0) {
         state.awardedRankMinInvites = rank.minInvites;
         state.coins += rank.rankCoinsBonus;
+      }
+
+      if (rank.minInvites > 0 && rank.minInvites > prevNotified) {
+        state.notifiedRankMinInvites = rank.minInvites;
+        callBackend("/api/rank/promote", {
+          previousRank: prevRank.name,
+          newRank: rank.name,
+          verifiedReferrals: Number(state.verifiedReferralCount) || 0
+        }).catch(() => {});
       }
 
       state.purchasedBoostMult = Math.min(
